@@ -1,0 +1,143 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id           String         @id @default(cuid())
+  name         String?
+  email        String         @unique
+  password     String
+  plan         String         @default("basico")
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  subscription Subscription?
+  recipes      Recipe[]
+  calculations ProfitCalculation[]
+
+  @@index([email])
+  @@index([plan])
+}
+
+model Subscription {
+  id             String   @id @default(cuid())
+  userId         String   @unique
+  user           User     @relation(fields: [userId], references: [id])
+  status         String   @default("active")
+  plan           String   @default("basico")
+  startDate      DateTime @default(now())
+  endDate        DateTime?
+  mpPreferenceId String?
+  mpPaymentId    String?
+  mpStatus       String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([status])
+  @@index([mpPreferenceId])
+}
+
+model Category {
+  id      String   @id @default(cuid())
+  name    String   @unique
+  slug    String   @unique
+  recipes Recipe[]
+}
+
+model ProductCategory {
+  id       String    @id @default(cuid())
+  name     String    @unique
+  slug     String    @unique
+  products Product[]
+
+  @@index([slug])
+}
+
+model Recipe {
+  id           String            @id @default(cuid())
+  title        String
+  description  String?
+  categoryId   String?
+  category     Category?         @relation(fields: [categoryId], references: [id])
+  instructions String?
+  imageUrl     String?
+  yield        Int?              @default(1)
+  isPremium    Boolean           @default(false)
+  createdById  String
+  createdBy    User              @relation(fields: [createdById], references: [id])
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  products     RecipeProduct[]
+  calculations ProfitCalculation[]
+
+  @@index([createdById])
+  @@index([categoryId])
+  @@index([createdById, createdAt])
+}
+
+model Product {
+  id              String          @id @default(cuid())
+  name            String
+  unit            String          @default("un")
+  averagePrice    Float           @default(0)
+  category        String?
+  categoryId      String?
+  productCategory ProductCategory? @relation(fields: [categoryId], references: [id])
+  recipes         RecipeProduct[]
+  purchases       Purchase[]
+
+  @@index([name])
+  @@index([categoryId])
+  @@index([name, unit])
+}
+
+model Purchase {
+  id         String   @id @default(cuid())
+  productId  String
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quantity   Float    @default(0)
+  totalPrice Float    @default(0)
+  store      String?
+  notes      String?
+  date       DateTime @default(now())
+  createdAt  DateTime @default(now())
+
+  @@index([productId])
+  @@index([productId, date])
+  @@index([date])
+}
+
+model RecipeProduct {
+  id        String  @id @default(cuid())
+  recipeId  String
+  recipe    Recipe  @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Float   @default(0)
+
+  @@unique([recipeId, productId])
+  @@index([recipeId])
+  @@index([productId])
+}
+
+model ProfitCalculation {
+  id            String   @id @default(cuid())
+  recipeId      String
+  recipe        Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+  productCost   Float    @default(0)
+  otherCosts    Float    @default(0)
+  suggestedPrice Float   @default(0)
+  profit        Float    @default(0)
+  profitMargin  Float    @default(0)
+  createdAt     DateTime @default(now())
+
+  @@index([userId])
+  @@index([recipeId])
+  @@index([userId, createdAt])
+}

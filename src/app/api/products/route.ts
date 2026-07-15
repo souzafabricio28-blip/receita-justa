@@ -1,0 +1,39 @@
+import { NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
+import { productService } from "@/lib/services/product-service";
+import { requirePlan } from "@/lib/plan-check";
+import { withErrorHandler } from "@/lib/errors";
+
+export const GET = withErrorHandler(async (request: Request) => {
+  const { searchParams } = new URL(request.url);
+  const q = searchParams.get("q");
+  const products = await productService.search(q || undefined);
+
+  return NextResponse.json(products, {
+    headers: { "Cache-Control": "public, max-age=60, stale-while-revalidate=300" },
+  });
+});
+
+export const POST = withErrorHandler(async (request: Request) => {
+  const { name, unit, averagePrice, category } = await request.json();
+  const product = await productService.create({ name, unit, averagePrice, category });
+  return NextResponse.json(product, { status: 201 });
+});
+
+export const DELETE = withErrorHandler(async (request: Request) => {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+  }
+
+  const planError = await requirePlan("deleteAllProducts");
+  if (planError) return planError;
+
+  const { searchParams } = new URL(request.url);
+  if (searchParams.get("all") !== "true") {
+    return NextResponse.json({ error: "Parâmetro inválido" }, { status: 400 });
+  }
+
+  await productService.deleteAll();
+  return NextResponse.json({ success: true });
+});
