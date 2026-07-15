@@ -58,7 +58,7 @@ export function ChatWidget() {
   async function importRecipe(assistantMsg: string) {
     setImporting(assistantMsg);
     try {
-      const parseRes = await fetch("/api/recipes/import?forceFallback=true", {
+      const parseRes = await fetch("/api/recipes/import", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: assistantMsg }),

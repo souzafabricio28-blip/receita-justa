@@ -2,13 +2,25 @@ import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
-export default async function RecipesPage() {
+const PAGE_SIZE = 12;
+
+export default async function RecipesPage(props: { searchParams?: Promise<{ page?: string }> }) {
+  const searchParams = await props.searchParams;
   const session = await auth();
-  const recipes = await prisma.recipe.findMany({
-    where: { createdById: session?.user?.id },
-    include: { category: true, products: { include: { product: true } } },
-    orderBy: { createdAt: "desc" },
-  });
+  const page = Math.max(1, Number(searchParams?.page) || 1);
+
+  const [recipes, total] = await Promise.all([
+    prisma.recipe.findMany({
+      where: { createdById: session?.user?.id },
+      include: { category: true, products: { include: { product: true } } },
+      orderBy: { createdAt: "desc" },
+      skip: (page - 1) * PAGE_SIZE,
+      take: PAGE_SIZE,
+    }),
+    prisma.recipe.count({ where: { createdById: session?.user?.id } }),
+  ]);
+
+  const totalPages = Math.ceil(total / PAGE_SIZE);
 
   return (
     <div>
@@ -68,6 +80,40 @@ export default async function RecipesPage() {
               </Link>
             );
           })}
+        </div>
+      )}
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2 mt-8">
+          {page > 1 && (
+            <Link
+              href={`/dashboard/recipes?page=${page - 1}`}
+              className="px-3 py-1.5 text-sm rounded-lg border hover:bg-gray-50"
+            >
+              ← Anterior
+            </Link>
+          )}
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+            <Link
+              key={p}
+              href={`/dashboard/recipes?page=${p}`}
+              className={`px-3 py-1.5 text-sm rounded-lg border ${
+                p === page
+                  ? "bg-emerald-600 text-white border-emerald-600"
+                  : "hover:bg-gray-50"
+              }`}
+            >
+              {p}
+            </Link>
+          ))}
+          {page < totalPages && (
+            <Link
+              href={`/dashboard/recipes?page=${page + 1}`}
+              className="px-3 py-1.5 text-sm rounded-lg border hover:bg-gray-50"
+            >
+              Próxima →
+            </Link>
+          )}
         </div>
       )}
     </div>

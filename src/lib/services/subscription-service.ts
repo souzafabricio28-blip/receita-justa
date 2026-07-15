@@ -1,3 +1,4 @@
+import { createHmac } from "node:crypto";
 import { prisma } from "@/lib/db";
 import { logger } from "@/lib/logger";
 import { ValidationError } from "@/lib/errors";
@@ -129,16 +130,24 @@ export const subscriptionService = {
   },
 
   verifySignature(body: string, signature: string | null): boolean {
-    if (!MP_WEBHOOK_SECRET) return true;
-    if (!signature) return false;
+    if (!MP_WEBHOOK_SECRET) return false;
 
     const parts = Object.fromEntries(
-      signature.split(",").map((p) => {
+      (signature || "").split(",").map((p) => {
         const [k, v] = p.trim().split("=");
-        return [k, v];
+        return [k?.trim(), v?.trim()];
       })
     );
 
-    return true; // Simplified for now; production should verify HMAC
+    const ts = parts["ts"];
+    const v1 = parts["v1"];
+    if (!ts || !v1) return false;
+
+    const manifest = `${ts}.${body}`;
+    const hmac = createHmac("sha256", MP_WEBHOOK_SECRET)
+      .update(manifest)
+      .digest("hex");
+
+    return hmac === v1;
   },
 };

@@ -9,18 +9,21 @@ export interface CreateProductInput {
   category?: string;
 }
 
+const PAGE_SIZE = 20;
+
 export const productService = {
-  async search(query?: string) {
+  async search(query?: string, page = 1) {
     const where = query
       ? { name: { contains: query, mode: "insensitive" as const } }
       : {};
 
-    logger.debug("Searching products", { query });
+    logger.debug("Searching products", { query, page });
     return prisma.product.findMany({
       where,
       include: { purchases: { orderBy: { date: "desc" } } },
       orderBy: { name: "asc" },
-      take: query ? 20 : undefined,
+      skip: (page - 1) * PAGE_SIZE,
+      take: PAGE_SIZE,
     });
   },
 
@@ -59,9 +62,11 @@ export const productService = {
 
   async deleteAll() {
     logger.warn("Deleting ALL products");
-    await prisma.purchase.deleteMany();
-    await prisma.recipeProduct.deleteMany();
-    await prisma.product.deleteMany();
+    await prisma.$transaction([
+      prisma.purchase.deleteMany(),
+      prisma.recipeProduct.deleteMany(),
+      prisma.product.deleteMany(),
+    ]);
   },
 
   async recordPurchase(
@@ -78,6 +83,29 @@ export const productService = {
     return prisma.purchase.create({
       data: { productId, quantity, totalPrice, store, notes },
     });
+  },
+
+  async listCategories() {
+    return prisma.productCategory.findMany({
+      include: { _count: { select: { products: true } } },
+      orderBy: { name: "asc" },
+    });
+  },
+
+  async createCategory(name: string, slug: string) {
+    if (!name?.trim()) throw new ValidationError("Nome é obrigatório");
+    if (!slug?.trim()) throw new ValidationError("Slug é obrigatório");
+    return prisma.productCategory.create({ data: { name: name.trim(), slug: slug.trim() } });
+  },
+
+  async updateCategory(id: string, name: string, slug: string) {
+    return prisma.productCategory.update({ where: { id }, data: { name, slug } });
+  },
+
+  async deleteCategory(id: string) {
+    const cat = await prisma.productCategory.findUnique({ where: { id } });
+    if (!cat) throw new ValidationError("Categoria não encontrada");
+    await prisma.productCategory.delete({ where: { id } });
   },
 
   async listPurchases(productId?: string) {

@@ -8,6 +8,7 @@ const links = [
   { href: "/dashboard", label: "Visão Geral", icon: "📊" },
   { href: "/dashboard/recipes", label: "Receitas", icon: "📖" },
   { href: "/dashboard/products", label: "Produtos", icon: "🛒" },
+  { href: "/dashboard/product-categories", label: "Cat. Produtos", icon: "📦" },
   { href: "/dashboard/categories", label: "Categorias", icon: "🏷️" },
   { href: "/dashboard/calculations", label: "Cálculos", icon: "💰" },
   { href: "/dashboard/subscription", label: "Planos", icon: "⭐" },

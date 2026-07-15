@@ -7,7 +7,8 @@ import { withErrorHandler } from "@/lib/errors";
 export const GET = withErrorHandler(async (request: Request) => {
   const { searchParams } = new URL(request.url);
   const q = searchParams.get("q");
-  const products = await productService.search(q || undefined);
+  const page = Math.max(1, Number(searchParams.get("page")) || 1);
+  const products = await productService.search(q || undefined, page);
 
   return NextResponse.json(products, {
     headers: { "Cache-Control": "public, max-age=60, stale-while-revalidate=300" },

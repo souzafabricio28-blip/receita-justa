@@ -202,10 +202,11 @@ function ProductRow({
   );
 }
 
-export function ProductList({ products: initialProducts }: { products: Product[] }) {
+export function ProductList({ products: initialProducts, total, page: initialPage }: { products: Product[]; total: number; page: number }) {
   const { toast } = useToast();
   const { can } = usePlan();
   const [products, setProducts] = useState(initialProducts);
+  const [page, setPage] = useState(initialPage);
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [searchingAll, setSearchingAll] = useState(false);
@@ -374,7 +375,7 @@ export function ProductList({ products: initialProducts }: { products: Product[]
                   key={product.id}
                   product={product}
                   onRefresh={async () => {
-                    const res = await fetch(`/api/products`);
+                    const res = await fetch(`/api/products?page=${page}`);
                     if (res.ok) {
                       const updated = await res.json();
                       setProducts(updated);
@@ -408,6 +409,40 @@ export function ProductList({ products: initialProducts }: { products: Product[]
         onConfirm={deleteAllProducts}
         onCancel={() => setDeleteAllConfirm(false)}
       />
+
+      {total > 20 && (
+        <div className="flex items-center justify-center gap-2 mt-8">
+          {page > 1 && (
+            <Link
+              href={`/dashboard/products?page=${page - 1}`}
+              className="px-3 py-1.5 text-sm rounded-lg border hover:bg-gray-50"
+            >
+              ← Anterior
+            </Link>
+          )}
+          {Array.from({ length: Math.ceil(total / 20) }, (_, i) => i + 1).map((p) => (
+            <Link
+              key={p}
+              href={`/dashboard/products?page=${p}`}
+              className={`px-3 py-1.5 text-sm rounded-lg border ${
+                p === page
+                  ? "bg-emerald-600 text-white border-emerald-600"
+                  : "hover:bg-gray-50"
+              }`}
+            >
+              {p}
+            </Link>
+          ))}
+          {page < Math.ceil(total / 20) && (
+            <Link
+              href={`/dashboard/products?page=${page + 1}`}
+              className="px-3 py-1.5 text-sm rounded-lg border hover:bg-gray-50"
+            >
+              Próxima →
+            </Link>
+          )}
+        </div>
+      )}
     </div>
   );
 }

@@ -1,11 +1,21 @@
 import { prisma } from "@/lib/db";
 import { ProductList } from "./ProductList";
 
-export default async function ProductsPage() {
-  const products = await prisma.product.findMany({
-    include: { purchases: { orderBy: { date: "desc" } } },
-    orderBy: { name: "asc" },
-  });
+const PAGE_SIZE = 20;
 
-  return <ProductList products={JSON.parse(JSON.stringify(products)) as any} />;
+export default async function ProductsPage(props: { searchParams?: Promise<{ page?: string }> }) {
+  const searchParams = await props.searchParams;
+  const page = Math.max(1, Number(searchParams?.page) || 1);
+
+  const [products, total] = await Promise.all([
+    prisma.product.findMany({
+      include: { purchases: { orderBy: { date: "desc" } } },
+      orderBy: { name: "asc" },
+      skip: (page - 1) * PAGE_SIZE,
+      take: PAGE_SIZE,
+    }),
+    prisma.product.count(),
+  ]);
+
+  return <ProductList products={JSON.parse(JSON.stringify(products)) as any} total={total} page={page} />;
 }
