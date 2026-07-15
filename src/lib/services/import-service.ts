@@ -215,7 +215,7 @@ Use esses nomes quando possível para facilitar o matching.`;
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${API_KEY}`,
-      "HTTP-Referer": "http://localhost:3000",
+      "HTTP-Referer": process.env.NEXTAUTH_URL || "https://receita-justa.vercel.app",
     },
     body,
     signal: AbortSignal.timeout(12000),

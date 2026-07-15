@@ -90,7 +90,7 @@ ${recipeSummary}
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${API_KEY}`,
-          "HTTP-Referer": "http://localhost:3000",
+          "HTTP-Referer": process.env.NEXTAUTH_URL || "https://receita-justa.vercel.app",
         },
         body: JSON.stringify({
           model: MODEL,

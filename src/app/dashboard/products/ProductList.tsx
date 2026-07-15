@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,6 +23,7 @@ interface Product {
   unit: string;
   averagePrice: number;
   category: string | null;
+  categoryId: string | null;
   purchases: Purchase[];
 }
 
@@ -202,6 +203,11 @@ function ProductRow({
   );
 }
 
+interface ProductCategoryOption {
+  id: string;
+  name: string;
+}
+
 export function ProductList({ products: initialProducts, total, page: initialPage }: { products: Product[]; total: number; page: number }) {
   const { toast } = useToast();
   const { can } = usePlan();
@@ -212,6 +218,11 @@ export function ProductList({ products: initialProducts, total, page: initialPag
   const [searchingAll, setSearchingAll] = useState(false);
   const [deleteAllConfirm, setDeleteAllConfirm] = useState(false);
   const [deletingAll, setDeletingAll] = useState(false);
+  const [prodCategories, setProdCategories] = useState<ProductCategoryOption[]>([]);
+
+  useEffect(() => {
+    fetch("/api/product-categories").then(r => r.ok && r.json()).then(setProdCategories).catch(() => {});
+  }, []);
 
   async function addProduct(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -224,7 +235,7 @@ export function ProductList({ products: initialProducts, total, page: initialPag
         name: form.get("name"),
         unit: form.get("unit"),
         averagePrice: Number(form.get("averagePrice")) || 0,
-        category: form.get("category"),
+        categoryId: form.get("categoryId") || undefined,
       }),
     });
     if (res.ok) {
@@ -346,7 +357,15 @@ export function ProductList({ products: initialProducts, total, page: initialPag
             </select>
           </div>
           <Input name="averagePrice" type="number" step="any" placeholder="0,00" label="Preço médio R$" className="w-28" />
-          <Input name="category" placeholder="Ex: Padaria" label="Categoria" className="w-32" />
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium text-gray-700">Categoria</label>
+            <select name="categoryId" className="px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 border-gray-300 w-40">
+              <option value="">Sem categoria</option>
+              {prodCategories.map((cat) => (
+                <option key={cat.id} value={cat.id}>{cat.name}</option>
+              ))}
+            </select>
+          </div>
           <Button type="submit" disabled={saving}>{saving ? "Salvando..." : "Salvar"}</Button>
         </form>
       )}

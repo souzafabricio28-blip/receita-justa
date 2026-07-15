@@ -7,6 +7,7 @@ export interface CreateProductInput {
   unit?: string;
   averagePrice?: number;
   category?: string;
+  categoryId?: string;
 }
 
 const PAGE_SIZE = 20;
@@ -42,6 +43,7 @@ export const productService = {
         unit: input.unit || "un",
         averagePrice: validatedPrice,
         category: input.category?.trim(),
+        categoryId: input.categoryId?.trim() || null,
       },
       include: { purchases: { orderBy: { date: "desc" } } },
     });

@@ -62,7 +62,7 @@ export default function RegisterPage() {
           <Input label="Nome" name="name" required placeholder="Seu nome" />
           <Input label="Email" name="email" type="email" required placeholder="seu@email.com" />
           <div className="relative">
-            <Input label="Senha" name="password" type={showPassword ? "text" : "password"} required placeholder="Mínimo 6 caracteres" minLength={6} />
+            <Input label="Senha" name="password" type={showPassword ? "text" : "password"} required placeholder="Mínimo 8 caracteres" minLength={8} />
             <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-[34px] text-sm text-gray-400 hover:text-gray-600">
               {showPassword ? "🙈" : "👁️"}
             </button>
