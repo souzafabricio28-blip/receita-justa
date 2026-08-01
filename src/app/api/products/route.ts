@@ -5,19 +5,29 @@ import { requirePlan } from "@/lib/plan-check";
 import { withErrorHandler } from "@/lib/errors";
 
 export const GET = withErrorHandler(async (request: Request) => {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+  }
+
   const { searchParams } = new URL(request.url);
   const q = searchParams.get("q");
   const page = Math.max(1, Number(searchParams.get("page")) || 1);
   const products = await productService.search(q || undefined, page);
 
   return NextResponse.json(products, {
-    headers: { "Cache-Control": "public, max-age=60, stale-while-revalidate=300" },
+    headers: { "Cache-Control": "private, max-age=60, stale-while-revalidate=300" },
   });
 });
 
 export const POST = withErrorHandler(async (request: Request) => {
-  const { name, unit, averagePrice, category } = await request.json();
-  const product = await productService.create({ name, unit, averagePrice, category });
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+  }
+
+  const { name, unit, brandId } = await request.json();
+  const product = await productService.create({ name, unit, brandId });
   return NextResponse.json(product, { status: 201 });
 });
 

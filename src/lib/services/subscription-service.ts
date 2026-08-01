@@ -1,4 +1,4 @@
-import { createHmac } from "node:crypto";
+import { createHmac, timingSafeEqual } from "node:crypto";
 import { prisma } from "@/lib/db";
 import { logger } from "@/lib/logger";
 import { ValidationError } from "@/lib/errors";
@@ -15,18 +15,8 @@ export const subscriptionService = {
     logger.info("Creating subscription checkout", { userId, plan });
 
     if (!MP_ACCESS_TOKEN) {
-      await prisma.subscription.upsert({
-        where: { userId },
-        update: { plan: "premium", status: "active", startDate: new Date() },
-        create: { userId, plan: "premium", status: "active" },
-      });
-
-      await prisma.user.update({
-        where: { id: userId },
-        data: { plan: "premium" },
-      });
-
-      return { url: "/dashboard/subscription?upgraded=true" };
+      logger.error("MERCADO_PAGO_ACCESS_TOKEN não configurado");
+      throw new ValidationError("Pagamento indisponível no momento. Tente novamente mais tarde.");
     }
 
     const preference = {
@@ -74,13 +64,24 @@ export const subscriptionService = {
     return { url: data.init_point };
   },
 
-  async handleWebhook(bodyText: string, signature: string | null) {
-    if (!this.verifySignature(bodyText, signature ?? null)) {
-      logger.warn("Invalid webhook signature");
+  async handleWebhook(bodyText: string, signature: string | null, requestId: string | null) {
+    let body: { type?: string; data?: { id?: string } };
+    try {
+      body = JSON.parse(bodyText);
+    } catch {
+      return { success: false, status: 400 };
+    }
+
+    if (signature) {
+      if (!this.verifySignature(body?.data?.id, requestId, signature)) {
+        logger.warn("Invalid webhook signature");
+        return { success: false, status: 401 };
+      }
+    } else if (MP_WEBHOOK_SECRET) {
+      logger.warn("Missing webhook signature");
       return { success: false, status: 401 };
     }
 
-    const body = JSON.parse(bodyText);
     const { type, data } = body;
 
     if (type === "payment" && data?.id && MP_ACCESS_TOKEN) {
@@ -129,11 +130,11 @@ export const subscriptionService = {
     return { success: true, status: 200 };
   },
 
-  verifySignature(body: string, signature: string | null): boolean {
-    if (!MP_WEBHOOK_SECRET) return false;
+  verifySignature(dataId: string | null | undefined, requestId: string | null | undefined, signature: string | null): boolean {
+    if (!MP_WEBHOOK_SECRET || !dataId || !requestId || !signature) return false;
 
     const parts = Object.fromEntries(
-      (signature || "").split(",").map((p) => {
+      signature.split(",").map((p) => {
         const [k, v] = p.trim().split("=");
         return [k?.trim(), v?.trim()];
       })
@@ -143,11 +144,14 @@ export const subscriptionService = {
     const v1 = parts["v1"];
     if (!ts || !v1) return false;
 
-    const manifest = `${ts}.${body}`;
+    const manifest = `id:${dataId};request-id:${requestId};ts:${ts};`;
     const hmac = createHmac("sha256", MP_WEBHOOK_SECRET)
       .update(manifest)
       .digest("hex");
 
-    return hmac === v1;
+    const a = Buffer.from(hmac);
+    const b = Buffer.from(v1);
+    if (a.length !== b.length) return false;
+    return timingSafeEqual(a, b);
   },
 };

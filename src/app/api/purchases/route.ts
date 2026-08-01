@@ -19,6 +19,11 @@ export const POST = withErrorHandler(async (request: Request) => {
 });
 
 export const GET = withErrorHandler(async (request: Request) => {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+  }
+
   const { searchParams } = new URL(request.url);
   const productId = searchParams.get("productId");
   const purchases = await productService.listPurchases(productId || undefined);

@@ -12,6 +12,7 @@ setInterval(() => {
 export const POST = withErrorHandler(async (request: Request) => {
   const bodyText = await request.text();
   const signature = request.headers.get("x-signature");
+  const requestId = request.headers.get("x-request-id");
   const idempotencyKey = request.headers.get("x-idempotency-key");
 
   if (idempotencyKey) {
@@ -22,7 +23,7 @@ export const POST = withErrorHandler(async (request: Request) => {
     setTimeout(() => processedIds.delete(idempotencyKey), IDEMPOTENCY_TTL);
   }
 
-  const result = await subscriptionService.handleWebhook(bodyText, signature);
+  const result = await subscriptionService.handleWebhook(bodyText, signature, requestId);
   if (!result.success) {
     return NextResponse.json({ error: "Assinatura inválida" }, { status: result.status });
   }

@@ -2,9 +2,13 @@ import { prisma } from "@/lib/db";
 import { logger } from "@/lib/logger";
 import { convertIngredient } from "@/lib/conversions";
 import { ValidationError } from "@/lib/errors";
+import { lookup } from "node:dns/promises";
 
 const API_KEY = process.env.OPENAI_API_KEY || "";
-const API_URL = process.env.OPENAI_API_URL || "https://api.openai.com/v1/chat/completions";
+let API_URL = process.env.OPENAI_API_URL || "https://api.openai.com/v1/chat/completions";
+if (API_URL && !API_URL.endsWith("/chat/completions")) {
+  API_URL = API_URL.replace(/\/+$/, "") + "/chat/completions";
+}
 const MODEL = process.env.AI_MODEL || "gpt-4o-mini";
 
 interface RawIngredient {
@@ -67,10 +71,11 @@ function enrichIngredients(
 
 export const importService = {
   async getProducts() {
-    return prisma.product.findMany({
+    const products = await prisma.product.findMany({
       select: { id: true, name: true, unit: true, averagePrice: true },
       orderBy: { name: "asc" },
     });
+    return products.map((p) => ({ ...p, averagePrice: p.averagePrice ?? 0 }));
   },
 
   async parseText(text: string, forceFallback = false): Promise<ImportResult> {
@@ -78,7 +83,7 @@ export const importService = {
 
     const products = await this.getProducts();
     const productList = products
-      .map((p) => `- ${p.name} (${p.unit}, R$ ${p.averagePrice.toFixed(2).replace(".", ",")})`)
+      .map((p) => `- ${p.name} (${p.unit}, R$ ${(p.averagePrice ?? 0).toFixed(2).replace(".", ",")})`)
       .join("\n");
 
     let parsed: ParsedRecipe;
@@ -100,6 +105,14 @@ export const importService = {
 
   async parseFromUrl(url: string): Promise<ImportResult> {
     if (!url?.trim()) throw new ValidationError("URL obrigatória");
+
+    await assertPublicUrl(url);
+
+    const blocked = ["tudogostoso.com.br", "www.tudogostoso.com.br"];
+    const urlLower = url.toLowerCase();
+    if (blocked.some((b) => urlLower.includes(b))) {
+      throw new ValidationError("O site TudoGostoso não é suportado devido a bloqueios de acesso. Tente outra fonte (ex: Receiteria, Panelinha, Comida e Receitas).");
+    }
 
     const response = await fetch(url, {
       headers: {
@@ -151,24 +164,55 @@ export const importService = {
     return this.parseText(combinedText, true);
   },
 
-  async save(text: string) {
-    // Parse first
-    const result = await this.parseText(text);
-
-    // Create recipe
-    const recipe = await prisma.recipe.create({
-      data: {
-        title: result.title || "Receita sem título",
-        description: result.description,
-        instructions: result.instructions,
-        yield: result.yield || 1,
-        createdById: "", // Must be set by caller
-      },
-    });
-
-    return { recipe, ingredients: result.ingredients };
-  },
 };
+
+function isPrivateIpv4(ip: string): boolean {
+  const parts = ip.split(".").map(Number);
+  if (parts.length !== 4 || parts.some((p) => Number.isNaN(p))) return true;
+  const [a, b] = parts;
+  if (a === 10) return true;
+  if (a === 172 && b >= 16 && b <= 31) return true;
+  if (a === 192 && b === 168) return true;
+  if (a === 127) return true;
+  if (a === 0) return true;
+  if (a === 169 && b === 254) return true;
+  if (a === 100 && b >= 64 && b <= 127) return true;
+  if (a >= 224) return true;
+  return false;
+}
+
+function isPrivateIp(ip: string): boolean {
+  const lower = ip.toLowerCase();
+  if (lower === "::1") return true;
+  if (lower.startsWith("fc") || lower.startsWith("fd")) return true;
+  if (/^fe[89ab]/.test(lower)) return true;
+  const v4Mapped = lower.split("::ffff:")[1];
+  if (v4Mapped) return isPrivateIpv4(v4Mapped);
+  return false;
+}
+
+async function assertPublicUrl(url: string): Promise<void> {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    throw new ValidationError("URL inválida");
+  }
+
+  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+    throw new ValidationError("Apenas URLs http/https são permitidas");
+  }
+
+  const hostname = parsed.hostname.toLowerCase();
+  if (hostname === "localhost" || hostname.endsWith(".localhost") || hostname === "0.0.0.0") {
+    throw new ValidationError("URL não permitida");
+  }
+
+  const addresses = await lookup(parsed.hostname, { all: true });
+  if (addresses.length === 0 || addresses.some(({ address }) => isPrivateIp(address))) {
+    throw new ValidationError("URL não permitida");
+  }
+}
 
 async function aiParse(text: string, productList: string): Promise<ParsedRecipe> {
   const systemPrompt = `Você é um assistente especializado em extrair receitas de textos não estruturados.
@@ -190,10 +234,16 @@ REGRAS:
 - description: opcional, breve resumo
 - instructions: modo de preparo completo, texto corrido
 - yield: número de porções (padrão 1 se não especificado)
-- ingredients: array de objetos. Se a unidade não for explícita, INFIRA (kg, g, L, ml, un, fatia, dente, ramo, folha)
-- NÃO use xícara, colher, copo como unidade - converta para gramas sempre que possível
+- ingredients: array de objetos. Se a unidade não for explícita, INFIRA baseado no ingrediente:
+  * Líquidos (leite, água, óleo, azeite, creme): use ml ou L
+  * Sólidos: use g ou kg
+  * Unidades contáveis: un, dente, ramo, folha
+- NÃO use xícara, colher, copo como unidade - converta para gramas (sólidos) ou ml (líquidos) sempre
 - NÃO inclua ingredientes "a gosto" como sal, pimenta, orégano, tempero, água, óleo para fritar (quantidade=0, unit="q.b.")
 - ingredients.name: use o nome mais limpo e próximo do produto real
+- EXEMPLO: "100 leite" → {"name": "Leite", "quantity": 100, "unit": "ml"}
+- EXEMPLO: "2 xícaras de farinha" → {"name": "Farinha de Trigo", "quantity": 240, "unit": "g"}
+- EXEMPLO: "1 colher de sopa de açúcar" → {"name": "Açúcar", "quantity": 12, "unit": "g"}
 
 Produtos disponíveis no sistema do usuário para referência:
 ${productList}
@@ -260,6 +310,7 @@ Use esses nomes quando possível para facilitar o matching.`;
 
 function cleanText(s: string): string {
   return s
+    .replace(/^de\s+|^da\s+|^do\s+|^das\s+|^dos\s+/i, "")
     .replace(/\*\*/g, "")
     .replace(/__(.*?)__/g, "$1")
     .replace(/[*`#]/g, "")
@@ -296,8 +347,29 @@ const UNIT_MAP: Record<string, string> = {
 
 const KNOWN_UNITS = Object.keys(UNIT_MAP);
 
+const LIQUID_KEYWORDS = [
+  "leite", "creme", "óleo", "oleo", "azeite", "água", "agua", "vinho",
+  "vinagre", "shoyu", "molho", "caldo", "essência", "essencia",
+  "extrato", "iogurte", "iorgute", "chantilly", "leite condensado",
+  "leite em pó", "creme de leite",
+];
+
+function inferUnit(name: string, quantity: number): string {
+  const lower = name.toLowerCase();
+  if (LIQUID_KEYWORDS.some((k) => lower.includes(k))) {
+    return quantity >= 3 ? "L" : "ml";
+  }
+  return quantity >= 3 ? "g" : "un";
+}
+
+const BULLET_RE = /^[-•*∙●◦‣⁃⁌⁍]\s*/;
+
+function isBulletLine(line: string): boolean {
+  return /^[-•*∙●◦‣⁃⁌⁍]\s/.test(line) || /^\d/.test(line) || /^\d+\//.test(line);
+}
+
 function parseIngredientLine(line: string): RawIngredient | null {
-  const clean = line.replace(/^[-•*]\s*/, "").trim();
+  const clean = line.replace(BULLET_RE, "").trim();
   if (!clean) return null;
 
   const unitPattern = KNOWN_UNITS.join("|");
@@ -309,7 +381,7 @@ function parseIngredientLine(line: string): RawIngredient | null {
   const match = clean.match(regex);
   if (match) {
     let qty = parseQuantity(match[1]);
-    let unit = match[2] ? UNIT_MAP[match[2].toLowerCase()] || match[2] : "un";
+    let unit = match[2] ? UNIT_MAP[match[2].toLowerCase()] || match[2] : inferUnit(match[3] || clean, qty);
     let name = match[3]?.trim() || clean;
     name = cleanText(name);
     if (!name) return null;
@@ -333,10 +405,10 @@ function parseIngredientLine(line: string): RawIngredient | null {
 function fallbackParse(text: string): ParsedRecipe {
   const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
 
-  const ingMarkers = ["ingrediente", "ingredientes:"];
+  const ingMarkers = ["ingrediente", "ingredientes:", "ingredientes\n", "ingredientes\r"];
   const prepMarkers = [
     "modo de preparo", "preparo:", "instruções", "instrucoes",
-    "modo de fazer:", "como fazer", "preparação",
+    "modo de fazer:", "como fazer", "preparação", "modo de preparo:",
   ];
 
   let ingStart = -1;
@@ -358,7 +430,7 @@ function fallbackParse(text: string): ParsedRecipe {
     for (let i = ingStart + 1; i < end; i++) {
       const l = lines[i];
       if (prepMarkers.some((m) => l.toLowerCase().includes(m))) break;
-      if (/^[-•*]\s/.test(l) || /^\d/.test(l) || /^\d+\//.test(l)) {
+      if (isBulletLine(l)) {
         ingredientLines.push(l);
       }
     }
@@ -368,7 +440,7 @@ function fallbackParse(text: string): ParsedRecipe {
     for (const l of lines) {
       if (ingMarkers.some((m) => l.toLowerCase().includes(m))) continue;
       if (prepMarkers.some((m) => l.toLowerCase().includes(m))) break;
-      if (/^[-•*]\s/.test(l)) {
+      if (/^[-•*∙●◦‣⁃⁌⁍]\s/.test(l)) {
         ingredientLines.push(l);
       }
     }
