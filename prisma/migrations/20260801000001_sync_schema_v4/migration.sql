@@ -1,0 +1,7 @@
+-- Sincroniza ProfitCalculation com o schema (colunas granulares de custo)
+ALTER TABLE "ProfitCalculation" ADD COLUMN IF NOT EXISTS "packagingCost" DOUBLE PRECISION NOT NULL DEFAULT 0;
+ALTER TABLE "ProfitCalculation" ADD COLUMN IF NOT EXISTS "transportCost" DOUBLE PRECISION NOT NULL DEFAULT 0;
+ALTER TABLE "ProfitCalculation" ADD COLUMN IF NOT EXISTS "laborCost" DOUBLE PRECISION NOT NULL DEFAULT 0;
+ALTER TABLE "ProfitCalculation" ADD COLUMN IF NOT EXISTS "feePercent" DOUBLE PRECISION NOT NULL DEFAULT 0;
+ALTER TABLE "ProfitCalculation" ADD COLUMN IF NOT EXISTS "desiredMargin" DOUBLE PRECISION NOT NULL DEFAULT 0;
+ALTER TABLE "ProfitCalculation" DROP COLUMN IF EXISTS "otherCosts";
