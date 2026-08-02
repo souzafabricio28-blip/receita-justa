@@ -5,6 +5,7 @@ export interface PriceResult {
   price: number;
   store: string;
   url: string;
+  score?: number;
 }
 
 interface SearchAdapter<T = unknown> {
@@ -473,8 +474,94 @@ function generateFallbackResults(productName: string, brandName?: string): Price
   ];
 }
 
+class VtexAdapter implements SearchAdapter {
+  readonly name = "vtex";
+
+  private stores: { name: string; host: string }[] = [
+    { name: "Atacadão", host: "https://www.atacadao.com.br" },
+    { name: "Sam's Club", host: "https://www.samsclub.com.br" },
+    { name: "Zona Sul", host: "https://www.zonasul.com.br" },
+  ];
+
+  isAvailable(): boolean {
+    return true;
+  }
+
+  async search(query: string): Promise<PriceResult[]> {
+    const cleanQuery = query
+      .replace(/\bpreço\b|\bpreco\b|\bsupermercado\b|\bbrasil\b/gi, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    for (const store of this.stores) {
+      try {
+        const url = `${store.host}/api/catalog_system/pub/products/search?ft=${encodeURIComponent(cleanQuery)}&_from=0&_to=9`;
+        const res = await fetch(url, {
+          headers: {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+            Accept: "application/json",
+            "Accept-Language": "pt-BR,pt;q=0.9",
+          },
+          signal: AbortSignal.timeout(12000),
+        });
+        if (!res.ok) continue;
+
+        const data = (await res.json()) as unknown;
+        if (!Array.isArray(data)) continue;
+
+        const tokens = tokenize(cleanQuery).filter((t) => !STOP_WORDS.has(t));
+        const results: PriceResult[] = [];
+        const seen = new Set<string>();
+
+        for (const item of data) {
+          const product = item as {
+            productName?: string;
+            link?: string;
+            items?: { sellers?: { commertialOffer?: { Price?: number; IsAvailable?: boolean } }[] }[];
+          };
+          const name = String(product.productName || "").trim();
+          const offer = product.items?.[0]?.sellers?.[0]?.commertialOffer;
+          const price = typeof offer?.Price === "number" ? offer.Price : undefined;
+          if (!name || typeof price !== "number" || price <= 0.5) continue;
+          if (offer?.IsAvailable === false) continue;
+
+          const normName = normalize(name);
+          let matched = 0;
+          for (const t of tokens) {
+            if (normName.includes(t)) matched++;
+          }
+          const score = tokens.length > 0 ? matched / tokens.length : 1;
+          if (tokens.length > 0 && matched === 0) continue;
+
+          const key = `${name}|${price}`;
+          if (seen.has(key)) continue;
+          seen.add(key);
+
+          results.push({
+            title: name.substring(0, 60),
+            price,
+            store: store.name,
+            url: product.link || "",
+            score,
+          });
+        }
+
+        results.sort((a, b) => (b as { score: number }).score - (a as { score: number }).score);
+        if (results.length >= 2) {
+          return results.slice(0, 6).map(({ score: _s, ...r }) => r);
+        }
+      } catch {
+        // Try next store
+      }
+    }
+
+    return [];
+  }
+}
+
 const adapters: SearchAdapter[] = [
   new SerpApiAdapter(),
+  new VtexAdapter(),
   new CheerioAdapter(),
 ];
 
@@ -482,7 +569,7 @@ let serpapiExhausted = false;
 
 export interface PriceSearchResult {
   results: PriceResult[];
-  source: "serpapi" | "cheerio" | "fallback";
+  source: "serpapi" | "vtex" | "cheerio" | "fallback";
 }
 
 export async function searchProductPrice(
@@ -497,7 +584,11 @@ export async function searchProductPrice(
     try {
       const results = await adapter.search(query);
       if (results.length >= 2) {
-        return { results, source: adapter.name === "serpapi" ? "serpapi" : "cheerio" };
+        const name = adapter.name;
+        return {
+          results,
+          source: name === "serpapi" ? "serpapi" : name === "vtex" ? "vtex" : "cheerio",
+        };
       }
     } catch {
       // Fall through — adapter failed silently, try next
