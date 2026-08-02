@@ -5,8 +5,25 @@ import type { SerpApiQuota } from "@/lib/serpapi-quota";
 
 export function SerpApiQuotaBanner() {
   const [quota, setQuota] = useState<SerpApiQuota | null | undefined>(undefined);
+  const [preview, setPreview] = useState(false);
 
   useEffect(() => {
+    setPreview(typeof window !== "undefined" && new URLSearchParams(window.location.search).get("previewCota") === "1");
+  }, []);
+
+  useEffect(() => {
+    if (preview) {
+      setQuota({
+        planName: "Free Plan",
+        searchesPerMonth: 250,
+        used: 250,
+        remaining: 0,
+        renewalDate: new Date(new Date().getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+        exhausted: true,
+        low: true,
+      });
+      return;
+    }
     let active = true;
     fetch("/api/admin/serpapi-quota", { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : null))
@@ -19,7 +36,7 @@ export function SerpApiQuotaBanner() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [preview]);
 
   if (quota === undefined || quota === null) return null;
   if (!quota.exhausted && !quota.low) return null;
