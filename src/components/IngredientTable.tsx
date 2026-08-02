@@ -1,11 +1,19 @@
 "use client";
 
+interface Brand {
+  id: string;
+  name: string;
+}
+
 interface ProductData {
   id: string;
   name: string;
   unit: string;
-  averagePrice: number;
+  averagePrice: number | null;
   realAveragePrice: number | null;
+  currentStock: number;
+  brand: Brand | null;
+  brandId: string | null;
 }
 
 interface RecipeProductData {
@@ -22,34 +30,39 @@ interface PriceResult {
 }
 
 function getPrice(rp: RecipeProductData): number {
-  return rp.product.realAveragePrice ?? rp.product.averagePrice;
+  return rp.product.realAveragePrice ?? rp.product.averagePrice ?? 0;
 }
 
 function PriceBadge({ userPrice, marketPrice }: { userPrice: number; marketPrice: number }) {
+  if (userPrice === 0) return null;
   const diff = marketPrice > 0 ? ((userPrice - marketPrice) / marketPrice) * 100 : 0;
   const isAbove = diff > 5;
   const isBelow = diff < -5;
-  if (!isAbove && !isBelow) return <span className="text-xs text-gray-400">✓ mercado</span>;
+  if (!isAbove && !isBelow) return <span className="inline-flex items-center gap-1 text-xs text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full"><svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>mercado</span>;
   return (
-    <span className={`text-xs font-medium ${isAbove ? "text-red-600" : "text-emerald-600"}`}>
+    <span className={`inline-flex items-center text-xs font-medium px-2 py-0.5 rounded-full ${isAbove ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-600"}`}>
       {isAbove ? `+${diff.toFixed(0)}% acima` : `${diff.toFixed(0)}% abaixo`}
     </span>
   );
 }
 
-function MarketPrices({ prices }: { prices: PriceResult[] }) {
+function MarketPrices({ prices, onSelect }: { prices: PriceResult[]; onSelect?: (price: number) => void }) {
   if (!prices.length) return null;
   return (
-    <details className="text-xs mt-1">
-      <summary className="cursor-pointer text-emerald-600 hover:underline">
-        {prices.length} preços online
+    <details className="text-xs mt-1.5">
+      <summary className="cursor-pointer text-emerald-600 hover:text-emerald-700 hover:underline font-medium">
+        {prices.length} preço{prices.length > 1 ? "s" : ""} online
       </summary>
-      <div className="mt-1 space-y-0.5">
+      <div className="mt-1.5 space-y-1 bg-gray-50 rounded-lg p-2">
         {prices.map((p, i) => (
-          <div key={i} className="flex justify-between text-gray-500">
-            <span className="truncate">{p.title.slice(0, 30)}</span>
-            <span>R$ {p.price.toFixed(2).replace(".", ",")}</span>
-          </div>
+          <button
+            key={i}
+            onClick={() => onSelect?.(p.price)}
+            className="w-full flex justify-between items-center text-gray-500 hover:bg-emerald-50 hover:text-emerald-700 rounded px-2 py-1.5 transition-colors text-left"
+          >
+            <span className="truncate max-w-[120px]">{p.title.slice(0, 30)}</span>
+            <span className="font-medium">R$ {p.price.toFixed(2).replace(".", ",")}</span>
+          </button>
         ))}
       </div>
     </details>
@@ -63,7 +76,9 @@ export function IngredientTable({
   loadingPrices,
   removingId,
   onSearchPrice,
+  onSelectPrice,
   onRemove,
+  kitchenMode,
 }: {
   products: RecipeProductData[];
   scale: number;
@@ -71,99 +86,159 @@ export function IngredientTable({
   loadingPrices: Record<string, boolean>;
   removingId: string | null;
   onSearchPrice: (productId: string, productName: string) => void;
+  onSelectPrice?: (productId: string, price: number, quantity: number) => void;
   onRemove: (productId: string) => void;
+  kitchenMode?: boolean;
 }) {
   if (products.length === 0) {
-    return <p className="text-gray-400 text-sm">Nenhum ingrediente adicionado.</p>;
+    return <p className="text-gray-400 text-sm text-center py-8">Nenhum ingrediente adicionado.</p>;
   }
 
   return (
-    <table className="w-full text-sm">
-      <thead>
-        <tr className="border-b text-left text-gray-500">
-          <th className="pb-2">Produto</th>
-          <th className="pb-2">Quantidade</th>
-          <th className="pb-2">Preço</th>
-          <th className="pb-2">Real (compras)</th>
-          <th className="pb-2">Mercado</th>
-          <th className="pb-2">Subtotal (real)</th>
-          <th className="pb-2"></th>
-        </tr>
-      </thead>
-      <tbody>
-        {products.map((rp) => {
-          const scaledQty = rp.quantity * scale;
-          const realP = rp.product.realAveragePrice;
-          const unitPrice = getPrice(rp);
-          const prices = pricesMap[rp.product.id];
-          const marketAvg = prices && prices.length > 0
-            ? prices.reduce((s, p) => s + p.price, 0) / prices.length
-            : null;
-
-          return (
-            <tr key={rp.id} className="border-b last:border-0">
-              <td className="py-2 font-medium">{rp.product.name}</td>
-              <td className="py-2">
-                <span className={scale !== 1 ? "text-emerald-600 font-medium" : ""}>
-                  {scaledQty.toFixed(2).replace(".", ",").replace(/,00$/, "")}
-                </span> {rp.product.unit}
-                {scale !== 1 && <span className="text-gray-400 text-xs ml-1">(base: {rp.quantity})</span>}
-              </td>
-              <td className="py-2 text-gray-600">
-                R$ {rp.product.averagePrice.toFixed(2).replace(".", ",")} /{rp.product.unit}
-              </td>
-              <td className="py-2">
-                {realP !== null ? (
-                  <span className="font-medium">
-                    R$ {realP.toFixed(2).replace(".", ",")} /{rp.product.unit}
-                    {rp.product.averagePrice > 0 && (
-                      <span className={`text-xs ml-1 ${realP > rp.product.averagePrice ? "text-red-500" : "text-emerald-500"}`}>
-                        ({(((realP - rp.product.averagePrice) / rp.product.averagePrice) * 100).toFixed(0)}%)
-                      </span>
-                    )}
-                  </span>
-                ) : (
-                  <span className="text-gray-300 text-xs">—</span>
-                )}
-              </td>
-              <td className="py-2">
-                {marketAvg !== null ? (
-                  <div>
-                    <span>R$ {marketAvg.toFixed(2).replace(".", ",")}</span>
-                    <PriceBadge userPrice={unitPrice} marketPrice={marketAvg} />
-                  </div>
-                ) : (
-                  <span className="text-gray-300">—</span>
-                )}
-                {prices && <MarketPrices prices={prices} />}
-              </td>
-              <td className="py-2 font-medium">
-                R$ {(unitPrice * scaledQty).toFixed(2).replace(".", ",")}
-              </td>
-              <td className="py-2">
-                <div className="flex gap-1">
-                  <button
-                    onClick={() => onSearchPrice(rp.product.id, rp.product.name)}
-                    disabled={loadingPrices[rp.product.id]}
-                    className="text-xs text-emerald-600 hover:underline disabled:text-gray-300"
-                    aria-label="Buscar preços"
-                  >
-                    {loadingPrices[rp.product.id] ? "..." : "🔍"}
-                  </button>
-                  <button
-                    onClick={() => onRemove(rp.product.id)}
-                    disabled={removingId === rp.product.id}
-                    className="text-xs text-red-400 hover:text-red-600 disabled:text-gray-300"
-                    aria-label="Remover ingrediente"
-                  >
-                    ✕
-                  </button>
-                </div>
-              </td>
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm">
+          <thead>
+            <tr className="text-left text-gray-400 text-xs uppercase tracking-wider border-b border-gray-100">
+              <th className="pb-3 font-medium">Produto</th>
+              <th className="pb-3 font-medium">Quantidade</th>
+              <th className="pb-3 font-medium">Estoque</th>
+              {!kitchenMode && <th className="pb-3 font-medium">Preço</th>}
+              {!kitchenMode && <th className="pb-3 font-medium">Real (compras)</th>}
+              {!kitchenMode && <th className="pb-3 font-medium">Mercado</th>}
+              {!kitchenMode && <th className="pb-3 font-medium">Subtotal</th>}
+              {!kitchenMode && <th className="pb-3 font-medium"></th>}
             </tr>
-          );
-        })}
-      </tbody>
-    </table>
+          </thead>
+        <tbody>
+          {products.map((rp, idx) => {
+            const scaledQty = rp.quantity * scale;
+            const realP = rp.product.realAveragePrice;
+            const unitPrice = getPrice(rp);
+            const prices = pricesMap[rp.product.id];
+            const marketAvg = prices && prices.length > 0
+              ? prices.reduce((s, p) => s + p.price, 0) / prices.length
+              : null;
+
+            return (
+              <tr key={rp.id} className={`border-b border-gray-50 last:border-0 hover:bg-gray-50/80 transition-colors ${idx % 2 === 0 ? "bg-white" : "bg-gray-50/30"}`}>
+                <td className="py-3 pr-4">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-gray-900">{rp.product.name}</span>
+                    {rp.product.brand && (
+                      <span className="text-xs text-gray-400 font-normal">({rp.product.brand.name})</span>
+                    )}
+                  </div>
+                </td>
+                <td className="py-3 pr-4 whitespace-nowrap">
+                  <span className={`font-medium ${scale !== 1 ? "text-emerald-600" : "text-gray-900"}`}>
+                    {scaledQty.toFixed(2).replace(".", ",").replace(/,00$/, "")}
+                  </span>
+                  <span className="text-gray-500 ml-1">{rp.product.unit}</span>
+                  {scale !== 1 && <span className="text-gray-400 text-xs ml-2">(base: {rp.quantity})</span>}
+                </td>
+                <td className="py-3 pr-4 whitespace-nowrap">
+                  {(() => {
+                    const stock = rp.product.currentStock ?? 0;
+                    const needed = scaledQty;
+                    const hasStock = stock >= needed;
+                    const hasSome = stock > 0;
+                    return (
+                      <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${
+                        hasStock
+                          ? "bg-emerald-50 text-emerald-700"
+                          : hasSome
+                          ? "bg-amber-50 text-amber-700"
+                          : "bg-red-50 text-red-700"
+                      }`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${
+                          hasStock ? "bg-emerald-500" : hasSome ? "bg-amber-500" : "bg-red-500"
+                        }`} />
+                        {stock.toFixed(2).replace(".", ",").replace(/,00$/, "") || "0"} {rp.product.unit}
+                        {!hasStock && hasSome && <span className="opacity-70">(faltam {(needed - stock).toFixed(2).replace(".", ",").replace(/,00$/, "")})</span>}
+                      </span>
+                    );
+                  })()}
+                </td>
+                {!kitchenMode && (
+                  <td className="py-3 pr-4 text-gray-600 whitespace-nowrap">
+                    {rp.product.averagePrice !== null ? (
+                      <span className="bg-gray-100 text-gray-700 px-2 py-0.5 rounded text-xs">
+                        R$ {rp.product.averagePrice.toFixed(2).replace(".", ",")} /{rp.product.unit}
+                      </span>
+                    ) : (
+                      <span className="text-gray-300 text-xs">—</span>
+                    )}
+                  </td>
+                )}
+                {!kitchenMode && (
+                  <td className="py-3 pr-4 whitespace-nowrap">
+                    {realP !== null ? (
+                      <span className="font-medium text-gray-900">
+                        <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-xs">
+                          R$ {realP.toFixed(2).replace(".", ",")} /{rp.product.unit}
+                        </span>
+                        {(rp.product.averagePrice ?? 0) > 0 && (
+                          <span className={`text-xs ml-1.5 ${realP > (rp.product.averagePrice ?? 0) ? "text-red-500" : "text-emerald-500"}`}>
+                            ({(((realP - (rp.product.averagePrice ?? 0)) / (rp.product.averagePrice ?? 0)) * 100).toFixed(0)}%)
+                          </span>
+                        )}
+                      </span>
+                    ) : (
+                      <span className="text-gray-300">—</span>
+                    )}
+                  </td>
+                )}
+                {!kitchenMode && (
+                  <td className="py-3 pr-4">
+                    {marketAvg !== null ? (
+                      <div className="flex items-center gap-2">
+                        <span className="text-gray-700 font-medium">R$ {marketAvg.toFixed(2).replace(".", ",")}</span>
+                        <PriceBadge userPrice={unitPrice} marketPrice={marketAvg} />
+                      </div>
+                    ) : (
+                      <span className="text-gray-300">—</span>
+                    )}
+                    {prices && <MarketPrices prices={prices} onSelect={(price) => onSelectPrice?.(rp.product.id, price, rp.quantity)} />}
+                  </td>
+                )}
+                {!kitchenMode && (
+                  <td className="py-3 pr-4 font-medium text-gray-900 whitespace-nowrap">
+                    R$ {(unitPrice * scaledQty).toFixed(2).replace(".", ",")}
+                  </td>
+                )}
+                {!kitchenMode && (
+                  <td className="py-3">
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => onSearchPrice(rp.product.id, rp.product.name)}
+                        disabled={loadingPrices[rp.product.id]}
+                        className="p-1.5 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors disabled:opacity-30"
+                        aria-label="Buscar preços"
+                        title="Buscar preços"
+                      >
+                        {loadingPrices[rp.product.id] ? (
+                          <span className="text-xs animate-pulse">...</span>
+                        ) : (
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                        )}
+                      </button>
+                      <button
+                        onClick={() => onRemove(rp.product.id)}
+                        disabled={removingId === rp.product.id}
+                        className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-30"
+                        aria-label="Remover ingrediente"
+                        title="Remover"
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                      </button>
+                    </div>
+                  </td>
+                )}
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
   );
 }

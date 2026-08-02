@@ -27,7 +27,7 @@ export const recipeService = {
     return prisma.recipe.findMany({
       where: { createdById: userId },
       include: {
-        products: { include: { product: true } },
+        products: { include: { product: { include: { brand: true } } } },
         category: true,
       },
       orderBy: { createdAt: "desc" },
@@ -39,7 +39,7 @@ export const recipeService = {
     const recipe = await prisma.recipe.findFirst({
       where: { id, createdById: userId },
       include: {
-        products: { include: { product: true } },
+        products: { include: { product: { include: { brand: true } } } },
         category: true,
       },
     });
@@ -96,7 +96,14 @@ export const recipeService = {
       where: { recipeId_productId: { recipeId, productId } },
       update: { quantity },
       create: { recipeId, productId, quantity },
-      include: { product: { include: { purchases: { orderBy: { date: "desc" } } } } },
+      include: {
+        product: {
+          include: {
+            brand: true,
+            purchases: { orderBy: { date: "desc" } },
+          },
+        },
+      },
     });
   },
 

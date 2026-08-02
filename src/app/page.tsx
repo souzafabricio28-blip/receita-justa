@@ -22,7 +22,7 @@ export default function Home() {
 
       <main className="flex-1 flex flex-col items-center justify-center px-4 py-16 text-center">
         <h2 className="text-4xl font-bold text-gray-900 mb-4 max-w-2xl">
-          Transforme suas receitas em <span className="text-emerald-600">lucro real</span>
+          Transforme suas receitas em <span style={{ color: "#6B9B6B", fontWeight: 700 }}>lucro real</span>
         </h2>
         <p className="text-lg text-gray-600 mb-8 max-w-xl">
           Calcule custos, defina preços e maximize sua margem de lucro com nossa plataforma inteligente.

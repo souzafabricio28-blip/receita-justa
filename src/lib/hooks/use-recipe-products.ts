@@ -3,12 +3,20 @@
 import { useState } from "react";
 import { useToast } from "@/components/ui/toast";
 
+interface BrandInfo {
+  id: string;
+  name: string;
+}
+
 interface ProductData {
   id: string;
   name: string;
   unit: string;
-  averagePrice: number;
+  averagePrice: number | null;
   realAveragePrice: number | null;
+  currentStock: number;
+  brand: BrandInfo | null;
+  brandId: string | null;
 }
 
 interface RecipeProductData {
@@ -25,7 +33,7 @@ export function useRecipeProducts(recipeId: string, initialProducts: RecipeProdu
   const { toast } = useToast();
 
   function getPrice(rp: RecipeProductData): number {
-    return rp.product.realAveragePrice ?? rp.product.averagePrice;
+    return rp.product.realAveragePrice ?? rp.product.averagePrice ?? 0;
   }
 
   function getScaledCost(rp: RecipeProductData, scale: number): number {
@@ -38,16 +46,20 @@ export function useRecipeProducts(recipeId: string, initialProducts: RecipeProdu
   function marketTotalCost(scale: number): number {
     return products.reduce((sum, rp) => {
       const prices = pricesMap[rp.product.id];
-      if (!prices || prices.length === 0) return sum + getPrice(rp) * rp.quantity * scale;
-      const avg = prices.reduce((s, p) => s + p.price, 0) / prices.length;
-      return sum + avg * rp.quantity * scale;
+      if (prices && prices.length > 0) {
+        const avg = prices.reduce((s, p) => s + p.price, 0) / prices.length;
+        return sum + avg;
+      }
+      return sum + getPrice(rp) * rp.quantity * scale;
     }, 0);
   }
 
-  async function searchProductPrice(productId: string, productName: string) {
+  async function searchProductPrice(productId: string, productName: string, brandName?: string) {
     setLoadingPrices((prev) => ({ ...prev, [productId]: true }));
     try {
-      const res = await fetch(`/api/prices/search?q=${encodeURIComponent(productName)}`);
+      const params = new URLSearchParams({ q: productName });
+      if (brandName) params.set("brand", brandName);
+      const res = await fetch(`/api/prices/search?${params}`);
       const data = await res.json();
       setPricesMap((prev) => ({ ...prev, [productId]: data.results || [] }));
     } catch {
@@ -55,6 +67,51 @@ export function useRecipeProducts(recipeId: string, initialProducts: RecipeProdu
     } finally {
       setLoadingPrices((prev) => ({ ...prev, [productId]: false }));
     }
+  }
+
+  async function searchAllPrices() {
+    const loading: Record<string, boolean> = {};
+    for (const rp of products) {
+      loading[rp.product.id] = true;
+    }
+    setLoadingPrices(loading);
+
+    const results = await Promise.allSettled(
+      products.map((rp) =>
+        fetch(`/api/prices/search?q=${encodeURIComponent(rp.product.name)}`)
+          .then((r) => r.json())
+          .then((data) => ({ productId: rp.product.id, results: data.results || [] }))
+      )
+    );
+
+    const updates: Record<string, { title: string; price: number; store: string; url: string }[]> = {};
+    for (const r of results) {
+      if (r.status === "fulfilled") {
+        updates[r.value.productId] = r.value.results;
+      }
+    }
+    setPricesMap((prev) => ({ ...prev, ...updates }));
+
+    const done: Record<string, boolean> = {};
+    for (const rp of products) {
+      done[rp.product.id] = false;
+    }
+    setLoadingPrices(done);
+
+    const total = Object.values(updates).filter((p) => p.length > 0).length;
+    if (total > 0) {
+      toast(`${total} ingrediente(s) com preços encontrados.`, "success");
+    }
+  }
+
+  function updateProductPrice(productId: string, newAveragePrice: number) {
+    setProducts((prev) =>
+      prev.map((rp) =>
+        rp.product.id === productId
+          ? { ...rp, product: { ...rp.product, averagePrice: newAveragePrice } }
+          : rp
+      )
+    );
   }
 
   async function addProduct(productId: string, quantity: number) {
@@ -93,6 +150,22 @@ export function useRecipeProducts(recipeId: string, initialProducts: RecipeProdu
     }
   }
 
+  function deductStock(deductions: { productId: string; deducted: number }[]) {
+    setProducts((prev) =>
+      prev.map((rp) => {
+        const d = deductions.find((d) => d.productId === rp.product.id);
+        if (!d) return rp;
+        return {
+          ...rp,
+          product: {
+            ...rp.product,
+            currentStock: Math.max(0, rp.product.currentStock - d.deducted),
+          },
+        };
+      })
+    );
+  }
+
   return {
     products,
     pricesMap,
@@ -102,6 +175,9 @@ export function useRecipeProducts(recipeId: string, initialProducts: RecipeProdu
     marketTotalCost,
     hasRealPrices,
     searchProductPrice,
+    searchAllPrices,
+    updateProductPrice,
+    deductStock,
     addProduct,
     removeProduct,
   };

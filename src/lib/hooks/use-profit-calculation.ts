@@ -10,23 +10,32 @@ interface CalcData {
   suggestedPrice: number;
 }
 
+interface SaveData {
+  suggestedPrice: number;
+  packagingCost: number;
+  transportCost: number;
+  laborCost: number;
+  feePercent: number;
+  desiredMargin: number;
+}
+
 export function useProfitCalculation(recipeId: string, initialCalc: CalcData | null) {
   const [showModal, setShowModal] = useState(false);
   const [calculating, setCalculating] = useState(false);
   const [lastCalc, setLastCalc] = useState<CalcData | null>(initialCalc);
   const { toast } = useToast();
 
-  async function calculateProfit(otherCosts: number, suggestedPrice: number) {
+  async function calculateProfit(data: SaveData) {
     setCalculating(true);
     try {
       const res = await fetch("/api/calculations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ recipeId, otherCosts, suggestedPrice }),
+        body: JSON.stringify({ recipeId, ...data }),
       });
       if (res.ok) {
-        const data = await res.json();
-        setLastCalc(data);
+        const calcData = await res.json();
+        setLastCalc(calcData);
         setShowModal(false);
         toast("Lucro calculado!", "success");
       } else {

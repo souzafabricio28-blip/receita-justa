@@ -9,7 +9,7 @@ export default async function ProductsPage(props: { searchParams?: Promise<{ pag
 
   const [products, total] = await Promise.all([
     prisma.product.findMany({
-      include: { purchases: { orderBy: { date: "desc" } } },
+      include: { brand: true, purchases: { orderBy: { date: "desc" } } },
       orderBy: { name: "asc" },
       skip: (page - 1) * PAGE_SIZE,
       take: PAGE_SIZE,

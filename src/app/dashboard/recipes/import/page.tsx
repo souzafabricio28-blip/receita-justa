@@ -47,6 +47,38 @@ function ImportForm() {
   const [urlParsing, setUrlParsing] = useState(false);
 
   useEffect(() => {
+    const parsedJson = sessionStorage.getItem("import_recipe_data");
+    if (parsedJson) {
+      try {
+        const data = JSON.parse(parsedJson);
+        setTitle(data.title || "");
+        setDescription(data.description || "");
+        setInstructions(data.instructions || "");
+        setYield(data.yield || 1);
+        const ings: Ingredient[] = (data.ingredients || []).map((i: any) => ({
+          name: i.name || "",
+          quantity: i.quantity || 1,
+          unit: i.unit || "un",
+          productId: i.productId || null,
+          productName: i.productName || "",
+          averagePrice: i.averagePrice || 0,
+          searchingPrice: false,
+          cleanName: i.cleanName,
+          convertedQuantity: i.convertedQuantity,
+          convertedUnit: i.convertedUnit,
+          productPrice: i.productPrice,
+          productUnit: i.productUnit,
+          estimatedCost: i.estimatedCost,
+          skipCalculation: i.skipCalculation,
+        }));
+        setIngredients(ings);
+        sessionStorage.removeItem("import_recipe_data");
+        if (ings.length > 0) {
+          const total = ings.reduce((s: number, ing: Ingredient) => s + (ing.estimatedCost || 0), 0);
+          toast(`${ings.length} ingredientes identificados, custo estimado: R$ ${total.toFixed(2).replace(".", ",")}`, "success");
+        }
+      } catch { /* ignore parse error, fall through to raw text */ }
+    }
     const saved = sessionStorage.getItem("import_recipe_text");
     if (saved) {
       setRawText(saved);
@@ -198,6 +230,7 @@ function ImportForm() {
           quantity: ing.quantity,
           unit: ing.unit,
           productId: ing.productId,
+          productName: ing.productName || ing.name,
           averagePrice: ing.averagePrice,
         })),
       }),
@@ -213,7 +246,7 @@ function ImportForm() {
 
     sessionStorage.removeItem("import_recipe_text");
     toast("Receita importada com sucesso!", "success");
-    router.push(`/dashboard/recipes/${recipe.id}`);
+    router.push(`/dashboard/recipes/${recipe.recipeId}`);
   }
 
   function startOver() {

@@ -6,14 +6,22 @@ import { getRealAveragePrices } from "@/lib/cost";
 export interface CalculateProfitInput {
   recipeId: string;
   suggestedPrice: number;
-  otherCosts?: number;
+  packagingCost?: number;
+  transportCost?: number;
+  laborCost?: number;
+  feePercent?: number;
+  desiredMargin?: number;
   userId: string;
 }
 
 export const calculationService = {
   async calculateProfit(input: CalculateProfitInput) {
     const { recipeId, suggestedPrice, userId } = input;
-    const otherCosts = input.otherCosts ?? 0;
+    const packagingCost = input.packagingCost ?? 0;
+    const transportCost = input.transportCost ?? 0;
+    const laborCost = input.laborCost ?? 0;
+    const feePercent = input.feePercent ?? 0;
+    const desiredMargin = input.desiredMargin ?? 0;
 
     if (!recipeId) throw new ValidationError("recipeId é obrigatório");
     if (suggestedPrice <= 0) throw new ValidationError("Preço sugerido deve ser maior que zero");
@@ -33,14 +41,20 @@ export const calculationService = {
       return total + unitPrice * rp.quantity;
     }, 0);
 
-    const totalCost = productCost + otherCosts;
-    const profit = suggestedPrice - totalCost;
+    const operationalCost = packagingCost + transportCost + laborCost;
+    const totalCost = productCost + operationalCost;
+    const feeDeduction = suggestedPrice * (feePercent / 100);
+    const profit = suggestedPrice - totalCost - feeDeduction;
     const profitMargin = suggestedPrice > 0 ? (profit / suggestedPrice) * 100 : 0;
 
     logger.info("Profit calculated", {
       recipeId,
       productCost,
-      otherCosts,
+      packagingCost,
+      transportCost,
+      laborCost,
+      feePercent,
+      desiredMargin,
       totalCost,
       suggestedPrice,
       profit,
@@ -52,7 +66,11 @@ export const calculationService = {
         recipeId,
         userId,
         productCost,
-        otherCosts,
+        packagingCost,
+        transportCost,
+        laborCost,
+        feePercent,
+        desiredMargin,
         suggestedPrice,
         profit,
         profitMargin,

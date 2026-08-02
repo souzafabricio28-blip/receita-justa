@@ -12,7 +12,7 @@ export async function requirePlan(feature: keyof PlanConfig["allowed"]): Promise
   const plan = (session.user as any).plan || "basico";
   if (!checkPlan(plan, feature)) {
     return NextResponse.json(
-      { error: "Plano não permite esta funcionalidade. Faça upgrade para Premium.", code: "PLAN_LIMIT" },
+      { error: "Funcionalidade exclusiva do plano Premium", code: "PLAN_LIMIT" },
       { status: 403 }
     );
   }

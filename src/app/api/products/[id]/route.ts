@@ -11,7 +11,7 @@ export const PATCH = withErrorHandler(async (request: Request, { params }: { par
 
   const { id } = await params;
   const body = await request.json();
-  const allowedFields = ["name", "unit", "averagePrice", "category", "categoryId"];
+  const allowedFields = ["name", "unit", "brandId", "averagePrice", "currentStock"];
   const data = Object.fromEntries(
     allowedFields.filter((f) => f in body).map((f) => [f, body[f]])
   );

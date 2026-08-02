@@ -28,7 +28,11 @@ export type AggregateProfitCalculation = {
 
 export type ProfitCalculationAvgAggregateOutputType = {
   productCost: number | null
-  otherCosts: number | null
+  packagingCost: number | null
+  transportCost: number | null
+  laborCost: number | null
+  feePercent: number | null
+  desiredMargin: number | null
   suggestedPrice: number | null
   profit: number | null
   profitMargin: number | null
@@ -36,7 +40,11 @@ export type ProfitCalculationAvgAggregateOutputType = {
 
 export type ProfitCalculationSumAggregateOutputType = {
   productCost: number | null
-  otherCosts: number | null
+  packagingCost: number | null
+  transportCost: number | null
+  laborCost: number | null
+  feePercent: number | null
+  desiredMargin: number | null
   suggestedPrice: number | null
   profit: number | null
   profitMargin: number | null
@@ -47,7 +55,11 @@ export type ProfitCalculationMinAggregateOutputType = {
   recipeId: string | null
   userId: string | null
   productCost: number | null
-  otherCosts: number | null
+  packagingCost: number | null
+  transportCost: number | null
+  laborCost: number | null
+  feePercent: number | null
+  desiredMargin: number | null
   suggestedPrice: number | null
   profit: number | null
   profitMargin: number | null
@@ -59,7 +71,11 @@ export type ProfitCalculationMaxAggregateOutputType = {
   recipeId: string | null
   userId: string | null
   productCost: number | null
-  otherCosts: number | null
+  packagingCost: number | null
+  transportCost: number | null
+  laborCost: number | null
+  feePercent: number | null
+  desiredMargin: number | null
   suggestedPrice: number | null
   profit: number | null
   profitMargin: number | null
@@ -71,7 +87,11 @@ export type ProfitCalculationCountAggregateOutputType = {
   recipeId: number
   userId: number
   productCost: number
-  otherCosts: number
+  packagingCost: number
+  transportCost: number
+  laborCost: number
+  feePercent: number
+  desiredMargin: number
   suggestedPrice: number
   profit: number
   profitMargin: number
@@ -82,7 +102,11 @@ export type ProfitCalculationCountAggregateOutputType = {
 
 export type ProfitCalculationAvgAggregateInputType = {
   productCost?: true
-  otherCosts?: true
+  packagingCost?: true
+  transportCost?: true
+  laborCost?: true
+  feePercent?: true
+  desiredMargin?: true
   suggestedPrice?: true
   profit?: true
   profitMargin?: true
@@ -90,7 +114,11 @@ export type ProfitCalculationAvgAggregateInputType = {
 
 export type ProfitCalculationSumAggregateInputType = {
   productCost?: true
-  otherCosts?: true
+  packagingCost?: true
+  transportCost?: true
+  laborCost?: true
+  feePercent?: true
+  desiredMargin?: true
   suggestedPrice?: true
   profit?: true
   profitMargin?: true
@@ -101,7 +129,11 @@ export type ProfitCalculationMinAggregateInputType = {
   recipeId?: true
   userId?: true
   productCost?: true
-  otherCosts?: true
+  packagingCost?: true
+  transportCost?: true
+  laborCost?: true
+  feePercent?: true
+  desiredMargin?: true
   suggestedPrice?: true
   profit?: true
   profitMargin?: true
@@ -113,7 +145,11 @@ export type ProfitCalculationMaxAggregateInputType = {
   recipeId?: true
   userId?: true
   productCost?: true
-  otherCosts?: true
+  packagingCost?: true
+  transportCost?: true
+  laborCost?: true
+  feePercent?: true
+  desiredMargin?: true
   suggestedPrice?: true
   profit?: true
   profitMargin?: true
@@ -125,7 +161,11 @@ export type ProfitCalculationCountAggregateInputType = {
   recipeId?: true
   userId?: true
   productCost?: true
-  otherCosts?: true
+  packagingCost?: true
+  transportCost?: true
+  laborCost?: true
+  feePercent?: true
+  desiredMargin?: true
   suggestedPrice?: true
   profit?: true
   profitMargin?: true
@@ -224,7 +264,11 @@ export type ProfitCalculationGroupByOutputType = {
   recipeId: string
   userId: string
   productCost: number
-  otherCosts: number
+  packagingCost: number
+  transportCost: number
+  laborCost: number
+  feePercent: number
+  desiredMargin: number
   suggestedPrice: number
   profit: number
   profitMargin: number
@@ -259,7 +303,11 @@ export type ProfitCalculationWhereInput = {
   recipeId?: Prisma.StringFilter<"ProfitCalculation"> | string
   userId?: Prisma.StringFilter<"ProfitCalculation"> | string
   productCost?: Prisma.FloatFilter<"ProfitCalculation"> | number
-  otherCosts?: Prisma.FloatFilter<"ProfitCalculation"> | number
+  packagingCost?: Prisma.FloatFilter<"ProfitCalculation"> | number
+  transportCost?: Prisma.FloatFilter<"ProfitCalculation"> | number
+  laborCost?: Prisma.FloatFilter<"ProfitCalculation"> | number
+  feePercent?: Prisma.FloatFilter<"ProfitCalculation"> | number
+  desiredMargin?: Prisma.FloatFilter<"ProfitCalculation"> | number
   suggestedPrice?: Prisma.FloatFilter<"ProfitCalculation"> | number
   profit?: Prisma.FloatFilter<"ProfitCalculation"> | number
   profitMargin?: Prisma.FloatFilter<"ProfitCalculation"> | number
@@ -273,7 +321,11 @@ export type ProfitCalculationOrderByWithRelationInput = {
   recipeId?: Prisma.SortOrder
   userId?: Prisma.SortOrder
   productCost?: Prisma.SortOrder
-  otherCosts?: Prisma.SortOrder
+  packagingCost?: Prisma.SortOrder
+  transportCost?: Prisma.SortOrder
+  laborCost?: Prisma.SortOrder
+  feePercent?: Prisma.SortOrder
+  desiredMargin?: Prisma.SortOrder
   suggestedPrice?: Prisma.SortOrder
   profit?: Prisma.SortOrder
   profitMargin?: Prisma.SortOrder
@@ -290,7 +342,11 @@ export type ProfitCalculationWhereUniqueInput = Prisma.AtLeast<{
   recipeId?: Prisma.StringFilter<"ProfitCalculation"> | string
   userId?: Prisma.StringFilter<"ProfitCalculation"> | string
   productCost?: Prisma.FloatFilter<"ProfitCalculation"> | number
-  otherCosts?: Prisma.FloatFilter<"ProfitCalculation"> | number
+  packagingCost?: Prisma.FloatFilter<"ProfitCalculation"> | number
+  transportCost?: Prisma.FloatFilter<"ProfitCalculation"> | number
+  laborCost?: Prisma.FloatFilter<"ProfitCalculation"> | number
+  feePercent?: Prisma.FloatFilter<"ProfitCalculation"> | number
+  desiredMargin?: Prisma.FloatFilter<"ProfitCalculation"> | number
   suggestedPrice?: Prisma.FloatFilter<"ProfitCalculation"> | number
   profit?: Prisma.FloatFilter<"ProfitCalculation"> | number
   profitMargin?: Prisma.FloatFilter<"ProfitCalculation"> | number
@@ -304,7 +360,11 @@ export type ProfitCalculationOrderByWithAggregationInput = {
   recipeId?: Prisma.SortOrder
   userId?: Prisma.SortOrder
   productCost?: Prisma.SortOrder
-  otherCosts?: Prisma.SortOrder
+  packagingCost?: Prisma.SortOrder
+  transportCost?: Prisma.SortOrder
+  laborCost?: Prisma.SortOrder
+  feePercent?: Prisma.SortOrder
+  desiredMargin?: Prisma.SortOrder
   suggestedPrice?: Prisma.SortOrder
   profit?: Prisma.SortOrder
   profitMargin?: Prisma.SortOrder
@@ -324,7 +384,11 @@ export type ProfitCalculationScalarWhereWithAggregatesInput = {
   recipeId?: Prisma.StringWithAggregatesFilter<"ProfitCalculation"> | string
   userId?: Prisma.StringWithAggregatesFilter<"ProfitCalculation"> | string
   productCost?: Prisma.FloatWithAggregatesFilter<"ProfitCalculation"> | number
-  otherCosts?: Prisma.FloatWithAggregatesFilter<"ProfitCalculation"> | number
+  packagingCost?: Prisma.FloatWithAggregatesFilter<"ProfitCalculation"> | number
+  transportCost?: Prisma.FloatWithAggregatesFilter<"ProfitCalculation"> | number
+  laborCost?: Prisma.FloatWithAggregatesFilter<"ProfitCalculation"> | number
+  feePercent?: Prisma.FloatWithAggregatesFilter<"ProfitCalculation"> | number
+  desiredMargin?: Prisma.FloatWithAggregatesFilter<"ProfitCalculation"> | number
   suggestedPrice?: Prisma.FloatWithAggregatesFilter<"ProfitCalculation"> | number
   profit?: Prisma.FloatWithAggregatesFilter<"ProfitCalculation"> | number
   profitMargin?: Prisma.FloatWithAggregatesFilter<"ProfitCalculation"> | number
@@ -334,7 +398,11 @@ export type ProfitCalculationScalarWhereWithAggregatesInput = {
 export type ProfitCalculationCreateInput = {
   id?: string
   productCost?: number
-  otherCosts?: number
+  packagingCost?: number
+  transportCost?: number
+  laborCost?: number
+  feePercent?: number
+  desiredMargin?: number
   suggestedPrice?: number
   profit?: number
   profitMargin?: number
@@ -348,7 +416,11 @@ export type ProfitCalculationUncheckedCreateInput = {
   recipeId: string
   userId: string
   productCost?: number
-  otherCosts?: number
+  packagingCost?: number
+  transportCost?: number
+  laborCost?: number
+  feePercent?: number
+  desiredMargin?: number
   suggestedPrice?: number
   profit?: number
   profitMargin?: number
@@ -358,7 +430,11 @@ export type ProfitCalculationUncheckedCreateInput = {
 export type ProfitCalculationUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   productCost?: Prisma.FloatFieldUpdateOperationsInput | number
-  otherCosts?: Prisma.FloatFieldUpdateOperationsInput | number
+  packagingCost?: Prisma.FloatFieldUpdateOperationsInput | number
+  transportCost?: Prisma.FloatFieldUpdateOperationsInput | number
+  laborCost?: Prisma.FloatFieldUpdateOperationsInput | number
+  feePercent?: Prisma.FloatFieldUpdateOperationsInput | number
+  desiredMargin?: Prisma.FloatFieldUpdateOperationsInput | number
   suggestedPrice?: Prisma.FloatFieldUpdateOperationsInput | number
   profit?: Prisma.FloatFieldUpdateOperationsInput | number
   profitMargin?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -372,7 +448,11 @@ export type ProfitCalculationUncheckedUpdateInput = {
   recipeId?: Prisma.StringFieldUpdateOperationsInput | string
   userId?: Prisma.StringFieldUpdateOperationsInput | string
   productCost?: Prisma.FloatFieldUpdateOperationsInput | number
-  otherCosts?: Prisma.FloatFieldUpdateOperationsInput | number
+  packagingCost?: Prisma.FloatFieldUpdateOperationsInput | number
+  transportCost?: Prisma.FloatFieldUpdateOperationsInput | number
+  laborCost?: Prisma.FloatFieldUpdateOperationsInput | number
+  feePercent?: Prisma.FloatFieldUpdateOperationsInput | number
+  desiredMargin?: Prisma.FloatFieldUpdateOperationsInput | number
   suggestedPrice?: Prisma.FloatFieldUpdateOperationsInput | number
   profit?: Prisma.FloatFieldUpdateOperationsInput | number
   profitMargin?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -384,7 +464,11 @@ export type ProfitCalculationCreateManyInput = {
   recipeId: string
   userId: string
   productCost?: number
-  otherCosts?: number
+  packagingCost?: number
+  transportCost?: number
+  laborCost?: number
+  feePercent?: number
+  desiredMargin?: number
   suggestedPrice?: number
   profit?: number
   profitMargin?: number
@@ -394,7 +478,11 @@ export type ProfitCalculationCreateManyInput = {
 export type ProfitCalculationUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   productCost?: Prisma.FloatFieldUpdateOperationsInput | number
-  otherCosts?: Prisma.FloatFieldUpdateOperationsInput | number
+  packagingCost?: Prisma.FloatFieldUpdateOperationsInput | number
+  transportCost?: Prisma.FloatFieldUpdateOperationsInput | number
+  laborCost?: Prisma.FloatFieldUpdateOperationsInput | number
+  feePercent?: Prisma.FloatFieldUpdateOperationsInput | number
+  desiredMargin?: Prisma.FloatFieldUpdateOperationsInput | number
   suggestedPrice?: Prisma.FloatFieldUpdateOperationsInput | number
   profit?: Prisma.FloatFieldUpdateOperationsInput | number
   profitMargin?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -406,7 +494,11 @@ export type ProfitCalculationUncheckedUpdateManyInput = {
   recipeId?: Prisma.StringFieldUpdateOperationsInput | string
   userId?: Prisma.StringFieldUpdateOperationsInput | string
   productCost?: Prisma.FloatFieldUpdateOperationsInput | number
-  otherCosts?: Prisma.FloatFieldUpdateOperationsInput | number
+  packagingCost?: Prisma.FloatFieldUpdateOperationsInput | number
+  transportCost?: Prisma.FloatFieldUpdateOperationsInput | number
+  laborCost?: Prisma.FloatFieldUpdateOperationsInput | number
+  feePercent?: Prisma.FloatFieldUpdateOperationsInput | number
+  desiredMargin?: Prisma.FloatFieldUpdateOperationsInput | number
   suggestedPrice?: Prisma.FloatFieldUpdateOperationsInput | number
   profit?: Prisma.FloatFieldUpdateOperationsInput | number
   profitMargin?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -428,7 +520,11 @@ export type ProfitCalculationCountOrderByAggregateInput = {
   recipeId?: Prisma.SortOrder
   userId?: Prisma.SortOrder
   productCost?: Prisma.SortOrder
-  otherCosts?: Prisma.SortOrder
+  packagingCost?: Prisma.SortOrder
+  transportCost?: Prisma.SortOrder
+  laborCost?: Prisma.SortOrder
+  feePercent?: Prisma.SortOrder
+  desiredMargin?: Prisma.SortOrder
   suggestedPrice?: Prisma.SortOrder
   profit?: Prisma.SortOrder
   profitMargin?: Prisma.SortOrder
@@ -437,7 +533,11 @@ export type ProfitCalculationCountOrderByAggregateInput = {
 
 export type ProfitCalculationAvgOrderByAggregateInput = {
   productCost?: Prisma.SortOrder
-  otherCosts?: Prisma.SortOrder
+  packagingCost?: Prisma.SortOrder
+  transportCost?: Prisma.SortOrder
+  laborCost?: Prisma.SortOrder
+  feePercent?: Prisma.SortOrder
+  desiredMargin?: Prisma.SortOrder
   suggestedPrice?: Prisma.SortOrder
   profit?: Prisma.SortOrder
   profitMargin?: Prisma.SortOrder
@@ -448,7 +548,11 @@ export type ProfitCalculationMaxOrderByAggregateInput = {
   recipeId?: Prisma.SortOrder
   userId?: Prisma.SortOrder
   productCost?: Prisma.SortOrder
-  otherCosts?: Prisma.SortOrder
+  packagingCost?: Prisma.SortOrder
+  transportCost?: Prisma.SortOrder
+  laborCost?: Prisma.SortOrder
+  feePercent?: Prisma.SortOrder
+  desiredMargin?: Prisma.SortOrder
   suggestedPrice?: Prisma.SortOrder
   profit?: Prisma.SortOrder
   profitMargin?: Prisma.SortOrder
@@ -460,7 +564,11 @@ export type ProfitCalculationMinOrderByAggregateInput = {
   recipeId?: Prisma.SortOrder
   userId?: Prisma.SortOrder
   productCost?: Prisma.SortOrder
-  otherCosts?: Prisma.SortOrder
+  packagingCost?: Prisma.SortOrder
+  transportCost?: Prisma.SortOrder
+  laborCost?: Prisma.SortOrder
+  feePercent?: Prisma.SortOrder
+  desiredMargin?: Prisma.SortOrder
   suggestedPrice?: Prisma.SortOrder
   profit?: Prisma.SortOrder
   profitMargin?: Prisma.SortOrder
@@ -469,7 +577,11 @@ export type ProfitCalculationMinOrderByAggregateInput = {
 
 export type ProfitCalculationSumOrderByAggregateInput = {
   productCost?: Prisma.SortOrder
-  otherCosts?: Prisma.SortOrder
+  packagingCost?: Prisma.SortOrder
+  transportCost?: Prisma.SortOrder
+  laborCost?: Prisma.SortOrder
+  feePercent?: Prisma.SortOrder
+  desiredMargin?: Prisma.SortOrder
   suggestedPrice?: Prisma.SortOrder
   profit?: Prisma.SortOrder
   profitMargin?: Prisma.SortOrder
@@ -562,7 +674,11 @@ export type ProfitCalculationUncheckedUpdateManyWithoutRecipeNestedInput = {
 export type ProfitCalculationCreateWithoutUserInput = {
   id?: string
   productCost?: number
-  otherCosts?: number
+  packagingCost?: number
+  transportCost?: number
+  laborCost?: number
+  feePercent?: number
+  desiredMargin?: number
   suggestedPrice?: number
   profit?: number
   profitMargin?: number
@@ -574,7 +690,11 @@ export type ProfitCalculationUncheckedCreateWithoutUserInput = {
   id?: string
   recipeId: string
   productCost?: number
-  otherCosts?: number
+  packagingCost?: number
+  transportCost?: number
+  laborCost?: number
+  feePercent?: number
+  desiredMargin?: number
   suggestedPrice?: number
   profit?: number
   profitMargin?: number
@@ -615,7 +735,11 @@ export type ProfitCalculationScalarWhereInput = {
   recipeId?: Prisma.StringFilter<"ProfitCalculation"> | string
   userId?: Prisma.StringFilter<"ProfitCalculation"> | string
   productCost?: Prisma.FloatFilter<"ProfitCalculation"> | number
-  otherCosts?: Prisma.FloatFilter<"ProfitCalculation"> | number
+  packagingCost?: Prisma.FloatFilter<"ProfitCalculation"> | number
+  transportCost?: Prisma.FloatFilter<"ProfitCalculation"> | number
+  laborCost?: Prisma.FloatFilter<"ProfitCalculation"> | number
+  feePercent?: Prisma.FloatFilter<"ProfitCalculation"> | number
+  desiredMargin?: Prisma.FloatFilter<"ProfitCalculation"> | number
   suggestedPrice?: Prisma.FloatFilter<"ProfitCalculation"> | number
   profit?: Prisma.FloatFilter<"ProfitCalculation"> | number
   profitMargin?: Prisma.FloatFilter<"ProfitCalculation"> | number
@@ -625,7 +749,11 @@ export type ProfitCalculationScalarWhereInput = {
 export type ProfitCalculationCreateWithoutRecipeInput = {
   id?: string
   productCost?: number
-  otherCosts?: number
+  packagingCost?: number
+  transportCost?: number
+  laborCost?: number
+  feePercent?: number
+  desiredMargin?: number
   suggestedPrice?: number
   profit?: number
   profitMargin?: number
@@ -637,7 +765,11 @@ export type ProfitCalculationUncheckedCreateWithoutRecipeInput = {
   id?: string
   userId: string
   productCost?: number
-  otherCosts?: number
+  packagingCost?: number
+  transportCost?: number
+  laborCost?: number
+  feePercent?: number
+  desiredMargin?: number
   suggestedPrice?: number
   profit?: number
   profitMargin?: number
@@ -674,7 +806,11 @@ export type ProfitCalculationCreateManyUserInput = {
   id?: string
   recipeId: string
   productCost?: number
-  otherCosts?: number
+  packagingCost?: number
+  transportCost?: number
+  laborCost?: number
+  feePercent?: number
+  desiredMargin?: number
   suggestedPrice?: number
   profit?: number
   profitMargin?: number
@@ -684,7 +820,11 @@ export type ProfitCalculationCreateManyUserInput = {
 export type ProfitCalculationUpdateWithoutUserInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   productCost?: Prisma.FloatFieldUpdateOperationsInput | number
-  otherCosts?: Prisma.FloatFieldUpdateOperationsInput | number
+  packagingCost?: Prisma.FloatFieldUpdateOperationsInput | number
+  transportCost?: Prisma.FloatFieldUpdateOperationsInput | number
+  laborCost?: Prisma.FloatFieldUpdateOperationsInput | number
+  feePercent?: Prisma.FloatFieldUpdateOperationsInput | number
+  desiredMargin?: Prisma.FloatFieldUpdateOperationsInput | number
   suggestedPrice?: Prisma.FloatFieldUpdateOperationsInput | number
   profit?: Prisma.FloatFieldUpdateOperationsInput | number
   profitMargin?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -696,7 +836,11 @@ export type ProfitCalculationUncheckedUpdateWithoutUserInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   recipeId?: Prisma.StringFieldUpdateOperationsInput | string
   productCost?: Prisma.FloatFieldUpdateOperationsInput | number
-  otherCosts?: Prisma.FloatFieldUpdateOperationsInput | number
+  packagingCost?: Prisma.FloatFieldUpdateOperationsInput | number
+  transportCost?: Prisma.FloatFieldUpdateOperationsInput | number
+  laborCost?: Prisma.FloatFieldUpdateOperationsInput | number
+  feePercent?: Prisma.FloatFieldUpdateOperationsInput | number
+  desiredMargin?: Prisma.FloatFieldUpdateOperationsInput | number
   suggestedPrice?: Prisma.FloatFieldUpdateOperationsInput | number
   profit?: Prisma.FloatFieldUpdateOperationsInput | number
   profitMargin?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -707,7 +851,11 @@ export type ProfitCalculationUncheckedUpdateManyWithoutUserInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   recipeId?: Prisma.StringFieldUpdateOperationsInput | string
   productCost?: Prisma.FloatFieldUpdateOperationsInput | number
-  otherCosts?: Prisma.FloatFieldUpdateOperationsInput | number
+  packagingCost?: Prisma.FloatFieldUpdateOperationsInput | number
+  transportCost?: Prisma.FloatFieldUpdateOperationsInput | number
+  laborCost?: Prisma.FloatFieldUpdateOperationsInput | number
+  feePercent?: Prisma.FloatFieldUpdateOperationsInput | number
+  desiredMargin?: Prisma.FloatFieldUpdateOperationsInput | number
   suggestedPrice?: Prisma.FloatFieldUpdateOperationsInput | number
   profit?: Prisma.FloatFieldUpdateOperationsInput | number
   profitMargin?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -718,7 +866,11 @@ export type ProfitCalculationCreateManyRecipeInput = {
   id?: string
   userId: string
   productCost?: number
-  otherCosts?: number
+  packagingCost?: number
+  transportCost?: number
+  laborCost?: number
+  feePercent?: number
+  desiredMargin?: number
   suggestedPrice?: number
   profit?: number
   profitMargin?: number
@@ -728,7 +880,11 @@ export type ProfitCalculationCreateManyRecipeInput = {
 export type ProfitCalculationUpdateWithoutRecipeInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   productCost?: Prisma.FloatFieldUpdateOperationsInput | number
-  otherCosts?: Prisma.FloatFieldUpdateOperationsInput | number
+  packagingCost?: Prisma.FloatFieldUpdateOperationsInput | number
+  transportCost?: Prisma.FloatFieldUpdateOperationsInput | number
+  laborCost?: Prisma.FloatFieldUpdateOperationsInput | number
+  feePercent?: Prisma.FloatFieldUpdateOperationsInput | number
+  desiredMargin?: Prisma.FloatFieldUpdateOperationsInput | number
   suggestedPrice?: Prisma.FloatFieldUpdateOperationsInput | number
   profit?: Prisma.FloatFieldUpdateOperationsInput | number
   profitMargin?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -740,7 +896,11 @@ export type ProfitCalculationUncheckedUpdateWithoutRecipeInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   userId?: Prisma.StringFieldUpdateOperationsInput | string
   productCost?: Prisma.FloatFieldUpdateOperationsInput | number
-  otherCosts?: Prisma.FloatFieldUpdateOperationsInput | number
+  packagingCost?: Prisma.FloatFieldUpdateOperationsInput | number
+  transportCost?: Prisma.FloatFieldUpdateOperationsInput | number
+  laborCost?: Prisma.FloatFieldUpdateOperationsInput | number
+  feePercent?: Prisma.FloatFieldUpdateOperationsInput | number
+  desiredMargin?: Prisma.FloatFieldUpdateOperationsInput | number
   suggestedPrice?: Prisma.FloatFieldUpdateOperationsInput | number
   profit?: Prisma.FloatFieldUpdateOperationsInput | number
   profitMargin?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -751,7 +911,11 @@ export type ProfitCalculationUncheckedUpdateManyWithoutRecipeInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   userId?: Prisma.StringFieldUpdateOperationsInput | string
   productCost?: Prisma.FloatFieldUpdateOperationsInput | number
-  otherCosts?: Prisma.FloatFieldUpdateOperationsInput | number
+  packagingCost?: Prisma.FloatFieldUpdateOperationsInput | number
+  transportCost?: Prisma.FloatFieldUpdateOperationsInput | number
+  laborCost?: Prisma.FloatFieldUpdateOperationsInput | number
+  feePercent?: Prisma.FloatFieldUpdateOperationsInput | number
+  desiredMargin?: Prisma.FloatFieldUpdateOperationsInput | number
   suggestedPrice?: Prisma.FloatFieldUpdateOperationsInput | number
   profit?: Prisma.FloatFieldUpdateOperationsInput | number
   profitMargin?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -765,7 +929,11 @@ export type ProfitCalculationSelect<ExtArgs extends runtime.Types.Extensions.Int
   recipeId?: boolean
   userId?: boolean
   productCost?: boolean
-  otherCosts?: boolean
+  packagingCost?: boolean
+  transportCost?: boolean
+  laborCost?: boolean
+  feePercent?: boolean
+  desiredMargin?: boolean
   suggestedPrice?: boolean
   profit?: boolean
   profitMargin?: boolean
@@ -779,7 +947,11 @@ export type ProfitCalculationSelectCreateManyAndReturn<ExtArgs extends runtime.T
   recipeId?: boolean
   userId?: boolean
   productCost?: boolean
-  otherCosts?: boolean
+  packagingCost?: boolean
+  transportCost?: boolean
+  laborCost?: boolean
+  feePercent?: boolean
+  desiredMargin?: boolean
   suggestedPrice?: boolean
   profit?: boolean
   profitMargin?: boolean
@@ -793,7 +965,11 @@ export type ProfitCalculationSelectUpdateManyAndReturn<ExtArgs extends runtime.T
   recipeId?: boolean
   userId?: boolean
   productCost?: boolean
-  otherCosts?: boolean
+  packagingCost?: boolean
+  transportCost?: boolean
+  laborCost?: boolean
+  feePercent?: boolean
+  desiredMargin?: boolean
   suggestedPrice?: boolean
   profit?: boolean
   profitMargin?: boolean
@@ -807,14 +983,18 @@ export type ProfitCalculationSelectScalar = {
   recipeId?: boolean
   userId?: boolean
   productCost?: boolean
-  otherCosts?: boolean
+  packagingCost?: boolean
+  transportCost?: boolean
+  laborCost?: boolean
+  feePercent?: boolean
+  desiredMargin?: boolean
   suggestedPrice?: boolean
   profit?: boolean
   profitMargin?: boolean
   createdAt?: boolean
 }
 
-export type ProfitCalculationOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "recipeId" | "userId" | "productCost" | "otherCosts" | "suggestedPrice" | "profit" | "profitMargin" | "createdAt", ExtArgs["result"]["profitCalculation"]>
+export type ProfitCalculationOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "recipeId" | "userId" | "productCost" | "packagingCost" | "transportCost" | "laborCost" | "feePercent" | "desiredMargin" | "suggestedPrice" | "profit" | "profitMargin" | "createdAt", ExtArgs["result"]["profitCalculation"]>
 export type ProfitCalculationInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   recipe?: boolean | Prisma.RecipeDefaultArgs<ExtArgs>
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
@@ -839,7 +1019,11 @@ export type $ProfitCalculationPayload<ExtArgs extends runtime.Types.Extensions.I
     recipeId: string
     userId: string
     productCost: number
-    otherCosts: number
+    packagingCost: number
+    transportCost: number
+    laborCost: number
+    feePercent: number
+    desiredMargin: number
     suggestedPrice: number
     profit: number
     profitMargin: number
@@ -1273,7 +1457,11 @@ export interface ProfitCalculationFieldRefs {
   readonly recipeId: Prisma.FieldRef<"ProfitCalculation", 'String'>
   readonly userId: Prisma.FieldRef<"ProfitCalculation", 'String'>
   readonly productCost: Prisma.FieldRef<"ProfitCalculation", 'Float'>
-  readonly otherCosts: Prisma.FieldRef<"ProfitCalculation", 'Float'>
+  readonly packagingCost: Prisma.FieldRef<"ProfitCalculation", 'Float'>
+  readonly transportCost: Prisma.FieldRef<"ProfitCalculation", 'Float'>
+  readonly laborCost: Prisma.FieldRef<"ProfitCalculation", 'Float'>
+  readonly feePercent: Prisma.FieldRef<"ProfitCalculation", 'Float'>
+  readonly desiredMargin: Prisma.FieldRef<"ProfitCalculation", 'Float'>
   readonly suggestedPrice: Prisma.FieldRef<"ProfitCalculation", 'Float'>
   readonly profit: Prisma.FieldRef<"ProfitCalculation", 'Float'>
   readonly profitMargin: Prisma.FieldRef<"ProfitCalculation", 'Float'>

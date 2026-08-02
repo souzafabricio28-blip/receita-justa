@@ -48,13 +48,14 @@ model Category {
   recipes Recipe[]
 }
 
-model ProductCategory {
-  id       String    @id @default(cuid())
-  name     String    @unique
-  slug     String    @unique
-  products Product[]
+model Brand {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  products  Product[]
 
-  @@index([slug])
+  @@index([name])
 }
 
 model Recipe {
@@ -80,18 +81,18 @@ model Recipe {
 }
 
 model Product {
-  id              String          @id @default(cuid())
-  name            String
-  unit            String          @default("un")
-  averagePrice    Float           @default(0)
-  category        String?
-  categoryId      String?
-  productCategory ProductCategory? @relation(fields: [categoryId], references: [id])
-  recipes         RecipeProduct[]
-  purchases       Purchase[]
+  id           String          @id @default(cuid())
+  name         String
+  unit         String          @default("un")
+  averagePrice Float?
+  currentStock Float           @default(0)
+  brandId      String?
+  brand        Brand?          @relation(fields: [brandId], references: [id])
+  recipes      RecipeProduct[]
+  purchases    Purchase[]
 
   @@index([name])
-  @@index([categoryId])
+  @@index([brandId])
   @@index([name, unit])
 }
 
@@ -125,17 +126,21 @@ model RecipeProduct {
 }
 
 model ProfitCalculation {
-  id            String   @id @default(cuid())
-  recipeId      String
-  recipe        Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
-  userId        String
-  user          User     @relation(fields: [userId], references: [id])
-  productCost   Float    @default(0)
-  otherCosts    Float    @default(0)
-  suggestedPrice Float   @default(0)
-  profit        Float    @default(0)
-  profitMargin  Float    @default(0)
-  createdAt     DateTime @default(now())
+  id              String   @id @default(cuid())
+  recipeId        String
+  recipe          Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User     @relation(fields: [userId], references: [id])
+  productCost     Float    @default(0)
+  packagingCost   Float    @default(0)
+  transportCost   Float    @default(0)
+  laborCost       Float    @default(0)
+  feePercent      Float    @default(0)
+  desiredMargin   Float    @default(0)
+  suggestedPrice  Float    @default(0)
+  profit          Float    @default(0)
+  profitMargin    Float    @default(0)
+  createdAt       DateTime @default(now())
 
   @@index([userId])
   @@index([recipeId])

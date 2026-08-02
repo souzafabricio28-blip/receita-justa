@@ -33,10 +33,10 @@ export type Subscription = Prisma.SubscriptionModel
  */
 export type Category = Prisma.CategoryModel
 /**
- * Model ProductCategory
+ * Model Brand
  * 
  */
-export type ProductCategory = Prisma.ProductCategoryModel
+export type Brand = Prisma.BrandModel
 /**
  * Model Recipe
  * 

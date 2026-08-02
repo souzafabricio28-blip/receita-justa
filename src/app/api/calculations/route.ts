@@ -13,11 +13,15 @@ export const POST = withErrorHandler(async (request: Request) => {
   const planError = await requirePlan("calcProfit");
   if (planError) return planError;
 
-  const { recipeId, suggestedPrice, otherCosts } = await request.json();
+  const { recipeId, suggestedPrice, packagingCost, transportCost, laborCost, feePercent, desiredMargin } = await request.json();
   const calculation = await calculationService.calculateProfit({
     recipeId,
     suggestedPrice,
-    otherCosts,
+    packagingCost,
+    transportCost,
+    laborCost,
+    feePercent,
+    desiredMargin,
     userId: session.user.id,
   });
 

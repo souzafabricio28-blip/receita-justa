@@ -11,7 +11,7 @@
 export type * from './models/User'
 export type * from './models/Subscription'
 export type * from './models/Category'
-export type * from './models/ProductCategory'
+export type * from './models/Brand'
 export type * from './models/Recipe'
 export type * from './models/Product'
 export type * from './models/Purchase'

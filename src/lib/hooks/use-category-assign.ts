@@ -41,5 +41,5 @@ export function useCategoryAssign(recipeId: string, initialCategoryId: string) {
     }
   }
 
-  return { categories, selectedCategory, assigning, assignCategory };
+  return { categories, selectedCategory, assigning, assignCategory, setCategories };
 }

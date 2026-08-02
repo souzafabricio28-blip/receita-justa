@@ -1,4 +1,4 @@
-export type PlanId = "basico" | "premium";
+export type PlanId = "basico" | "premium" | "admin";
 
 export interface PlanConfig {
   label: string;
@@ -40,7 +40,7 @@ export const PLANS: Record<PlanId, PlanConfig> = {
       searchPrices: false,
       calcProfit: false,
       purchases: false,
-      assistant: false,
+      assistant: true,
       deleteAllProducts: false,
       exportPdf: true,
     },
@@ -59,6 +59,26 @@ export const PLANS: Record<PlanId, PlanConfig> = {
       "Comparação preço de mercado",
     ],
     limits: { maxRecipes: 999, maxProducts: 999 },
+    allowed: {
+      importText: true,
+      importUrl: true,
+      searchPrices: true,
+      calcProfit: true,
+      purchases: true,
+      assistant: true,
+      deleteAllProducts: true,
+      exportPdf: true,
+    },
+  },
+  admin: {
+    label: "Administrador",
+    price: 0,
+    features: [
+      "Acesso total a todas as funcionalidades",
+      "Gerenciar usuários",
+      "Sem limites",
+    ],
+    limits: { maxRecipes: 99999, maxProducts: 99999 },
     allowed: {
       importText: true,
       importUrl: true,

@@ -54,7 +54,7 @@ export const ModelName = {
   User: 'User',
   Subscription: 'Subscription',
   Category: 'Category',
-  ProductCategory: 'ProductCategory',
+  Brand: 'Brand',
   Recipe: 'Recipe',
   Product: 'Product',
   Purchase: 'Purchase',
@@ -117,13 +117,14 @@ export const CategoryScalarFieldEnum = {
 export type CategoryScalarFieldEnum = (typeof CategoryScalarFieldEnum)[keyof typeof CategoryScalarFieldEnum]
 
 
-export const ProductCategoryScalarFieldEnum = {
+export const BrandScalarFieldEnum = {
   id: 'id',
   name: 'name',
-  slug: 'slug'
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
 } as const
 
-export type ProductCategoryScalarFieldEnum = (typeof ProductCategoryScalarFieldEnum)[keyof typeof ProductCategoryScalarFieldEnum]
+export type BrandScalarFieldEnum = (typeof BrandScalarFieldEnum)[keyof typeof BrandScalarFieldEnum]
 
 
 export const RecipeScalarFieldEnum = {
@@ -148,8 +149,8 @@ export const ProductScalarFieldEnum = {
   name: 'name',
   unit: 'unit',
   averagePrice: 'averagePrice',
-  category: 'category',
-  categoryId: 'categoryId'
+  currentStock: 'currentStock',
+  brandId: 'brandId'
 } as const
 
 export type ProductScalarFieldEnum = (typeof ProductScalarFieldEnum)[keyof typeof ProductScalarFieldEnum]
@@ -184,7 +185,11 @@ export const ProfitCalculationScalarFieldEnum = {
   recipeId: 'recipeId',
   userId: 'userId',
   productCost: 'productCost',
-  otherCosts: 'otherCosts',
+  packagingCost: 'packagingCost',
+  transportCost: 'transportCost',
+  laborCost: 'laborCost',
+  feePercent: 'feePercent',
+  desiredMargin: 'desiredMargin',
   suggestedPrice: 'suggestedPrice',
   profit: 'profit',
   profitMargin: 'profitMargin',

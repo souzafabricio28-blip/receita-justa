@@ -10,7 +10,7 @@ interface ProductOption {
   id: string;
   name: string;
   unit: string;
-  averagePrice: number;
+  averagePrice: number | null;
 }
 
 interface NewIngredient {
@@ -18,7 +18,7 @@ interface NewIngredient {
   productName: string;
   quantity: number;
   unit: string;
-  averagePrice: number;
+  averagePrice: number | null;
 }
 
 export default function NewRecipePage() {
@@ -76,7 +76,7 @@ export default function NewRecipePage() {
     );
   }
 
-  const totalCost = ingredients.reduce((s, ing) => s + ing.averagePrice * ing.quantity, 0);
+  const totalCost = ingredients.reduce((s, ing) => s + (ing.averagePrice ?? 0) * ing.quantity, 0);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -153,7 +153,7 @@ export default function NewRecipePage() {
                       className="w-full text-left flex items-center gap-2 p-2 hover:bg-gray-50 border-b text-sm"
                     >
                       <span className="flex-1 font-medium">{p.name}</span>
-                      <span className="text-gray-400">R$ {p.averagePrice.toFixed(2).replace(".", ",")}/{p.unit}</span>
+                      <span className="text-gray-400">R$ {(p.averagePrice ?? 0).toFixed(2).replace(".", ",")}/{p.unit}</span>
                       <span className="text-emerald-600 font-medium">+</span>
                     </button>
                   ))
@@ -179,7 +179,7 @@ export default function NewRecipePage() {
                   />
                   <span className="text-xs text-gray-400 w-6">{ing.unit}</span>
                   <span className="text-xs text-gray-500 w-16 text-right">
-                    R$ {(ing.averagePrice * ing.quantity).toFixed(2).replace(".", ",")}
+                    R$ {((ing.averagePrice ?? 0) * ing.quantity).toFixed(2).replace(".", ",")}
                   </span>
                   <button type="button" onClick={() => removeIngredient(i)} className="text-xs text-red-400 hover:text-red-600 px-1">
                     ✕

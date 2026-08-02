@@ -11,7 +11,7 @@ export function usePlan() {
 
   return {
     plan,
-    isPremium: plan === "premium",
+    isPremium: plan === "premium" || plan === "admin",
     can: (feature: keyof PlanConfig["allowed"]) => checkPlan(plan, feature),
     planConfig,
     isLoaded: session !== undefined,

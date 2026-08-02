@@ -5,9 +5,12 @@ import { ValidationError } from "@/lib/errors";
 export interface CreateProductInput {
   name: string;
   unit?: string;
-  averagePrice?: number;
-  category?: string;
-  categoryId?: string;
+  brandId?: string;
+}
+
+export interface BrandOption {
+  id: string;
+  name: string;
 }
 
 const PAGE_SIZE = 20;
@@ -21,7 +24,7 @@ export const productService = {
     logger.debug("Searching products", { query, page });
     return prisma.product.findMany({
       where,
-      include: { purchases: { orderBy: { date: "desc" } } },
+      include: { brand: true, purchases: { orderBy: { date: "desc" } } },
       orderBy: { name: "asc" },
       skip: (page - 1) * PAGE_SIZE,
       take: PAGE_SIZE,
@@ -32,28 +35,28 @@ export const productService = {
     if (!input.name?.trim()) throw new ValidationError("Nome é obrigatório");
     if (input.name.length > 200) throw new ValidationError("Nome muito longo (máximo 200 caracteres)");
 
-    const validatedPrice = typeof input.averagePrice === "number" && input.averagePrice >= 0
-      ? input.averagePrice
-      : 0;
-
-    logger.info("Creating product", { name: input.name, price: validatedPrice });
+    logger.info("Creating product", { name: input.name, brandId: input.brandId });
     return prisma.product.create({
       data: {
         name: input.name.trim(),
         unit: input.unit || "un",
-        averagePrice: validatedPrice,
-        category: input.category?.trim(),
-        categoryId: input.categoryId?.trim() || null,
+        brandId: input.brandId?.trim() || null,
       },
       include: { purchases: { orderBy: { date: "desc" } } },
     });
   },
 
-  async update(id: string, input: Partial<CreateProductInput>) {
+  async update(id: string, input: Partial<CreateProductInput & { averagePrice?: number; currentStock?: number }>) {
     logger.debug("Updating product", { productId: id, ...input });
+    const data: Record<string, unknown> = {};
+    if (input.name !== undefined) data.name = input.name;
+    if (input.unit !== undefined) data.unit = input.unit;
+    if (input.brandId !== undefined) data.brandId = input.brandId;
+    if (input.averagePrice !== undefined) data.averagePrice = input.averagePrice;
+    if (input.currentStock !== undefined) data.currentStock = input.currentStock;
     return prisma.product.update({
       where: { id },
-      data: input,
+      data,
     });
   },
 
@@ -87,27 +90,18 @@ export const productService = {
     });
   },
 
-  async listCategories() {
-    return prisma.productCategory.findMany({
-      include: { _count: { select: { products: true } } },
+  async listBrands() {
+    return prisma.brand.findMany({
       orderBy: { name: "asc" },
     });
   },
 
-  async createCategory(name: string, slug: string) {
-    if (!name?.trim()) throw new ValidationError("Nome é obrigatório");
-    if (!slug?.trim()) throw new ValidationError("Slug é obrigatório");
-    return prisma.productCategory.create({ data: { name: name.trim(), slug: slug.trim() } });
-  },
-
-  async updateCategory(id: string, name: string, slug: string) {
-    return prisma.productCategory.update({ where: { id }, data: { name, slug } });
-  },
-
-  async deleteCategory(id: string) {
-    const cat = await prisma.productCategory.findUnique({ where: { id } });
-    if (!cat) throw new ValidationError("Categoria não encontrada");
-    await prisma.productCategory.delete({ where: { id } });
+  async adjustStock(productId: string, quantity: number) {
+    logger.info("Adjusting stock", { productId, quantity });
+    return prisma.product.update({
+      where: { id: productId },
+      data: { currentStock: { increment: quantity } },
+    });
   },
 
   async listPurchases(productId?: string) {

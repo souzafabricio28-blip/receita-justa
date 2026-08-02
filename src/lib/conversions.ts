@@ -263,22 +263,21 @@ export function convertIngredient(
   }
 
   let estimatedCost = 0;
-  if (product && product.averagePrice > 0) {
+  if (product && (product.averagePrice ?? 0) > 0) {
+    const price = product.averagePrice ?? 0;
     if (calcUnit === "kg" && product.unit === "kg") {
-      estimatedCost = calcQty * product.averagePrice;
+      estimatedCost = calcQty * price;
     } else if (calcUnit === "L" && product.unit === "L") {
-      estimatedCost = calcQty * product.averagePrice;
-    } else if (product.unit === "un" || product.unit === "cx" || product.unit === "pct") {
-      estimatedCost = quantity * product.averagePrice;
+      estimatedCost = calcQty * price;
+    } else if (product.unit === "un") {
+      estimatedCost = quantity * price;
     } else if (product.unit === "kg" && unit === "un") {
-      // Se não tem peso médio, usa o preço do kg direto (subestima)
-      estimatedCost = (convQty / 1000) * product.averagePrice;
+      estimatedCost = (convQty / 1000) * price;
     } else if (product.unit === "kg" && calcUnit === "g") {
       const kg = convQty / 1000;
-      estimatedCost = kg * product.averagePrice;
+      estimatedCost = kg * price;
     } else {
-      // Fallback: usa a quantidade original
-      estimatedCost = quantity * product.averagePrice;
+      estimatedCost = quantity * price;
     }
   }
 

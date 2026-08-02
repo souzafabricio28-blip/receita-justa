@@ -7,6 +7,7 @@ export async function GET(request: Request) {
   if (planError) return planError;
   const { searchParams } = new URL(request.url);
   const q = searchParams.get("q");
+  const brand = searchParams.get("brand");
   const lat = searchParams.get("lat");
   const lng = searchParams.get("lng");
 
@@ -19,7 +20,7 @@ export async function GET(request: Request) {
       ? { lat: Number(lat), lng: Number(lng) }
       : null;
 
-  const results = await searchProductPrice(q, location);
+  const results = await searchProductPrice(q, location, brand || undefined);
   return NextResponse.json(
     { results },
     {
