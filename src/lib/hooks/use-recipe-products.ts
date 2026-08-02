@@ -61,12 +61,37 @@ export function useRecipeProducts(recipeId: string, initialProducts: RecipeProdu
       if (brandName) params.set("brand", brandName);
       const res = await fetch(`/api/prices/search?${params}`);
       const data = await res.json();
-      setPricesMap((prev) => ({ ...prev, [productId]: data.results || [] }));
+      const results = data.results || [];
+      setPricesMap((prev) => ({ ...prev, [productId]: results }));
+      const rp = products.find((p) => p.product.id === productId);
+      if (rp && results.length > 0) {
+        const best = lowestPrice(results);
+        const ok = await applyPrice(rp.product.id, best.price, rp.quantity);
+        if (ok) toast("Menor preço aplicado ao ingrediente!", "success");
+      }
     } catch {
       // Silently fail
     } finally {
       setLoadingPrices((prev) => ({ ...prev, [productId]: false }));
     }
+  }
+
+  function lowestPrice(results: { title: string; price: number; store: string; url: string }[]) {
+    return results.reduce((min, p) => (p.price < min.price ? p : min), results[0]);
+  }
+
+  async function applyPrice(productId: string, price: number, quantity: number) {
+    const perUnitPrice = quantity > 0 ? price / quantity : price;
+    const res = await fetch(`/api/products/${productId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ averagePrice: perUnitPrice }),
+    });
+    if (res.ok) {
+      updateProductPrice(productId, perUnitPrice);
+      return true;
+    }
+    return false;
   }
 
   async function searchAllPrices() {
@@ -92,15 +117,24 @@ export function useRecipeProducts(recipeId: string, initialProducts: RecipeProdu
     }
     setPricesMap((prev) => ({ ...prev, ...updates }));
 
+    let applied = 0;
+    for (const rp of products) {
+      const list = updates[rp.product.id];
+      if (list && list.length > 0) {
+        const best = lowestPrice(list);
+        const ok = await applyPrice(rp.product.id, best.price, rp.quantity);
+        if (ok) applied++;
+      }
+    }
+
     const done: Record<string, boolean> = {};
     for (const rp of products) {
       done[rp.product.id] = false;
     }
     setLoadingPrices(done);
 
-    const total = Object.values(updates).filter((p) => p.length > 0).length;
-    if (total > 0) {
-      toast(`${total} ingrediente(s) com preços encontrados.`, "success");
+    if (applied > 0) {
+      toast(`${applied} ingrediente(s) com o menor preço aplicado.`, "success");
     }
   }
 
@@ -176,6 +210,7 @@ export function useRecipeProducts(recipeId: string, initialProducts: RecipeProdu
     hasRealPrices,
     searchProductPrice,
     searchAllPrices,
+    applyPrice,
     updateProductPrice,
     deductStock,
     addProduct,

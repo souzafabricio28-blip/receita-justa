@@ -48,7 +48,7 @@ export function RecipeDetail({ recipe }: { recipe: RecipeData }) {
   const {
     products, pricesMap, loadingPrices, removingId,
     custoReal, marketTotalCost, hasRealPrices,
-    searchProductPrice, searchAllPrices, updateProductPrice,
+    searchProductPrice, searchAllPrices, applyPrice,
     deductStock, addProduct, removeProduct,
   } = useRecipeProducts(recipe.id, recipe.products);
 
@@ -125,21 +125,11 @@ export function RecipeDetail({ recipe }: { recipe: RecipeData }) {
   }
 
   async function selectPrice(productId: string, price: number, quantity: number) {
-    const perUnitPrice = quantity > 0 ? price / quantity : price;
-    try {
-      const res = await fetch(`/api/products/${productId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ averagePrice: perUnitPrice }),
-      });
-      if (res.ok) {
-        updateProductPrice(productId, perUnitPrice);
-        toast("Preço aplicado ao ingrediente!", "success");
-      } else {
-        toast("Erro ao salvar preço", "error");
-      }
-    } catch {
-      toast("Erro ao conectar", "error");
+    const ok = await applyPrice(productId, price, quantity);
+    if (ok) {
+      toast("Preço aplicado ao ingrediente!", "success");
+    } else {
+      toast("Erro ao salvar preço", "error");
     }
   }
 
