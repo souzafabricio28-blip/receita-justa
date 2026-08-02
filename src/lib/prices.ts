@@ -270,7 +270,10 @@ class SerpApiAdapter implements SearchAdapter {
       if (!res.ok) return [];
 
       const data = await res.json();
-      const results: PriceResult[] = [];
+      const tokens = tokenize(query).filter(
+        (t) => !STOP_WORDS.has(t) && t !== "preco" && t !== "supermercado" && t !== "brasil",
+      );
+      const scored: { result: PriceResult; score: number }[] = [];
       const seen = new Set<string>();
 
       for (const item of data.organic_results || []) {
@@ -286,15 +289,33 @@ class SerpApiAdapter implements SearchAdapter {
         const key = `${title}|${price}`;
         if (seen.has(key)) continue;
         seen.add(key);
-        results.push({
-          title: title.substring(0, 60) || query,
-          price,
-          store,
-          url: item.link || "",
+
+        const normText = normalize(text);
+        let matched = 0;
+        for (const t of tokens) {
+          if (normText.includes(t)) matched++;
+        }
+        const score = tokens.length > 0 ? matched / tokens.length : 1;
+        scored.push({
+          result: {
+            title: title.substring(0, 60) || query,
+            price,
+            store,
+            url: item.link || "",
+          },
+          score,
         });
       }
 
-      return results.slice(0, 6);
+      scored.sort((a, b) => b.score - a.score || a.result.price - b.result.price);
+
+      const strict = scored.filter((s) => s.score >= 0.34 && (tokens.length === 0 || s.score * tokens.length >= 1));
+      if (strict.length >= 2) return strict.slice(0, 6).map((s) => s.result);
+
+      const relaxed = scored.filter((s) => tokens.length === 0 || s.score * tokens.length >= 1);
+      if (relaxed.length >= 2) return relaxed.slice(0, 6).map((s) => s.result);
+
+      return scored.slice(0, 6).map((s) => s.result);
     } catch {
       return [];
     }
