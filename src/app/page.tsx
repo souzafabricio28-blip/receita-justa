@@ -32,7 +32,7 @@ export default function Home() {
             href="/register"
             className="bg-emerald-600 text-white px-8 py-3 rounded-lg text-lg font-medium hover:bg-emerald-700"
           >
-            Começar grátis
+            Começar
           </Link>
           <Link
             href="/login"

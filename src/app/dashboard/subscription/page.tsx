@@ -100,7 +100,9 @@ function SubscriptionContent() {
       )}
 
       <div className="grid md:grid-cols-2 gap-8">
-        {Object.entries(PLANS).map(([id, plan]) => (
+        {Object.entries(PLANS)
+          .filter(([id]) => id !== "admin")
+          .map(([id, plan]) => (
           <div
             key={id}
             className={`relative bg-white rounded-2xl p-6 flex flex-col transition-all duration-300 hover:-translate-y-1 ${

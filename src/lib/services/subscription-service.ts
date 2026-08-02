@@ -9,8 +9,8 @@ const MP_WEBHOOK_SECRET = process.env.MERCADO_PAGO_WEBHOOK_SECRET;
 
 export const subscriptionService = {
   async createCheckout(userId: string, plan: string) {
+    if (plan !== "basico" && plan !== "premium") throw new ValidationError("Plano inválido");
     const planConfig = PLANS[plan as keyof typeof PLANS];
-    if (!planConfig) throw new ValidationError("Plano inválido");
 
     logger.info("Creating subscription checkout", { userId, plan });
 
