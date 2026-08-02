@@ -265,26 +265,36 @@ class SerpApiAdapter implements SearchAdapter {
 
   async search(query: string): Promise<PriceResult[]> {
     try {
-      const url = `https://serpapi.com/search.json?q=${encodeURIComponent(query)}&tbm=shop&hl=pt-BR&api_key=${this.apiKey}`;
-      const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
+      const url = `https://serpapi.com/search.json?engine=google&q=${encodeURIComponent(query)}&hl=pt-BR&gl=br&num=10&api_key=${this.apiKey}`;
+      const res = await fetch(url, { signal: AbortSignal.timeout(12000) });
       if (!res.ok) return [];
 
       const data = await res.json();
       const results: PriceResult[] = [];
+      const seen = new Set<string>();
 
-      for (const item of data.shopping_results || []) {
-        const price = parseFloat(String(item.price || "0").replace(/[^0-9.,]/g, "").replace(",", "."));
-        if (price > 0) {
-          results.push({
-            title: item.title || query,
-            price,
-            store: item.store || item.source || "Loja online",
-            url: item.link || item.product_link || "",
-          });
-        }
+      for (const item of data.organic_results || []) {
+        const title = String(item.title || "").trim();
+        const snippet = String(item.snippet || "").trim();
+        const text = `${title} ${snippet}`;
+        if (isNoise(text, item.link || item.displayed_link || "")) continue;
+        const priceMatch = text.match(/R\$\s*([0-9]+[.,][0-9]{2})/);
+        if (!priceMatch) continue;
+        const price = parseFloat(priceMatch[1].replace(/\./g, "").replace(",", "."));
+        if (!(price > 0.5 && price < 100000)) continue;
+        const store = extractStore(text) || domainLabel(item.displayed_link || item.link || "");
+        const key = `${title}|${price}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        results.push({
+          title: title.substring(0, 60) || query,
+          price,
+          store,
+          url: item.link || "",
+        });
       }
 
-      return results.slice(0, 8);
+      return results.slice(0, 6);
     } catch {
       return [];
     }
@@ -347,6 +357,78 @@ function extractStore(text: string): string {
     if (text.toLowerCase().includes(store.toLowerCase())) return store;
   }
   return "";
+}
+
+const NOISE_DOMAINS = [
+  "bbc.com",
+  "g1.globo.com",
+  "globo.com",
+  "uol.com.br",
+  "terra.com.br",
+  "timesbrasil",
+  "instagram.com",
+  "facebook.com",
+  "youtube.com",
+  "reclameaqui.com.br",
+  "estadao.com.br",
+  "folha.uol.com.br",
+  "cnnbrasil.com.br",
+];
+
+const NOISE_WORDS = [
+  "dispara",
+  "recua",
+  "preocupa",
+  "dobra",
+  "subiu",
+  "caiu",
+  "quase dobra",
+  "chega a",
+  "eleva",
+  "avança",
+  "sobe",
+  "reajuste",
+  "por que o preço",
+];
+
+function isNoise(text: string, link: string): boolean {
+  const lower = `${text} ${link}`.toLowerCase();
+  if (NOISE_DOMAINS.some((d) => lower.includes(d))) return true;
+  return NOISE_WORDS.some((w) => lower.includes(w));
+}
+
+const DOMAIN_LABELS: { pattern: string; label: string }[] = [
+  { pattern: "assai", label: "Assaí" },
+  { pattern: "carrefour", label: "Carrefour" },
+  { pattern: "pab.com.br", label: "Pão de Açúcar" },
+  { pattern: "extra", label: "Extra" },
+  { pattern: "atacadao", label: "Atacadão" },
+  { pattern: "sams", label: "Sam's Club" },
+  { pattern: "magazineluiza", label: "Magazine Luiza" },
+  { pattern: "amazon", label: "Amazon" },
+  { pattern: "mercadolivre", label: "Mercado Livre" },
+  { pattern: "shopee", label: "Shopee" },
+  { pattern: "americanas", label: "Americanas" },
+  { pattern: "ifood", label: "iFood" },
+  { pattern: "rappi", label: "Rappi" },
+  { pattern: "muffato", label: "Muffato" },
+  { pattern: "barbosa", label: "Barbosa" },
+  { pattern: "mambo", label: "Mambo" },
+  { pattern: "hada", label: "Hada" },
+  { pattern: "semar", label: "Semar" },
+];
+
+function domainLabel(text: string): string {
+  const host = text.toLowerCase();
+  for (const { pattern, label } of DOMAIN_LABELS) {
+    if (host.includes(pattern)) return label;
+  }
+  try {
+    const u = new URL(text.startsWith("http") ? text : `https://${text}`);
+    return u.hostname.replace(/^www\./, "").replace(/\.com\.br$/, "").replace(/\.br$/, "").replace(/\.com$/, "").replace(/\./, " ");
+  } catch {
+    return "Loja online";
+  }
 }
 
 function generateFallbackResults(productName: string, brandName?: string): PriceResult[] {
