@@ -20,9 +20,9 @@ export async function GET(request: Request) {
       ? { lat: Number(lat), lng: Number(lng) }
       : null;
 
-  const results = await searchProductPrice(q, location, brand || undefined);
+  const { results, source } = await searchProductPrice(q, location, brand || undefined);
   return NextResponse.json(
-    { results },
+    { results, source },
     {
       headers: { "Cache-Control": "no-store" },
     }

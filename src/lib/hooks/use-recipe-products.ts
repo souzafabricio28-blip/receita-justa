@@ -62,12 +62,17 @@ export function useRecipeProducts(recipeId: string, initialProducts: RecipeProdu
       const res = await fetch(`/api/prices/search?${params}`, { cache: "no-store" });
       const data = await res.json();
       const results = data.results || [];
+      const source = data.source as string | undefined;
       setPricesMap((prev) => ({ ...prev, [productId]: results }));
       const rp = products.find((p) => p.product.id === productId);
       if (rp && results.length > 0) {
-        const best = lowestPrice(results);
-        const ok = await applyPrice(rp.product.id, best.price, rp.quantity);
-        if (ok) toast("Menor preço aplicado ao ingrediente!", "success");
+        if (source === "fallback") {
+          toast("Cota de buscas reais esgotada — exibindo preços estimados.", "info");
+        } else {
+          const best = lowestPrice(results);
+          const ok = await applyPrice(rp.product.id, best.price, rp.quantity);
+          if (ok) toast("Menor preço aplicado ao ingrediente!", "success");
+        }
       }
     } catch {
       // Silently fail
@@ -105,14 +110,18 @@ export function useRecipeProducts(recipeId: string, initialProducts: RecipeProdu
       products.map((rp) =>
         fetch(`/api/prices/search?q=${encodeURIComponent(rp.product.name)}`, { cache: "no-store" })
           .then((r) => r.json())
-          .then((data) => ({ productId: rp.product.id, results: data.results || [] }))
+          .then((data) => ({ productId: rp.product.id, results: data.results || [], source: data.source as string | undefined }))
       )
     );
 
     const updates: Record<string, { title: string; price: number; store: string; url: string }[]> = {};
+    const sources: Record<string, string | undefined> = {};
+    let fallbackCount = 0;
     for (const r of results) {
       if (r.status === "fulfilled") {
         updates[r.value.productId] = r.value.results;
+        sources[r.value.productId] = r.value.source;
+        if (r.value.source === "fallback" && r.value.results.length > 0) fallbackCount++;
       }
     }
     setPricesMap((prev) => ({ ...prev, ...updates }));
@@ -121,6 +130,7 @@ export function useRecipeProducts(recipeId: string, initialProducts: RecipeProdu
     for (const rp of products) {
       const list = updates[rp.product.id];
       if (list && list.length > 0) {
+        if (sources[rp.product.id] === "fallback") continue;
         const best = lowestPrice(list);
         const ok = await applyPrice(rp.product.id, best.price, rp.quantity);
         if (ok) applied++;
@@ -135,6 +145,8 @@ export function useRecipeProducts(recipeId: string, initialProducts: RecipeProdu
 
     if (applied > 0) {
       toast(`${applied} ingrediente(s) com o menor preço aplicado.`, "success");
+    } else if (fallbackCount > 0) {
+      toast("Cota de buscas reais esgotada — exibindo preços estimados.", "info");
     }
   }
 

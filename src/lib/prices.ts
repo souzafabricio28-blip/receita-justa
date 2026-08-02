@@ -260,14 +260,18 @@ class SerpApiAdapter implements SearchAdapter {
   }
 
   isAvailable(): boolean {
-    return this.apiKey.length > 0;
+    return this.apiKey.length > 0 && !serpapiExhausted;
   }
 
   async search(query: string): Promise<PriceResult[]> {
     try {
       const url = `https://serpapi.com/search.json?engine=google&q=${encodeURIComponent(query)}&hl=pt-BR&gl=br&num=10&api_key=${this.apiKey}`;
       const res = await fetch(url, { signal: AbortSignal.timeout(12000) });
-      if (!res.ok) return [];
+      if (!res.ok) {
+        const body = await res.text().catch(() => "");
+        if (/credit|quota|limit|plan/i.test(body)) serpapiExhausted = true;
+        return [];
+      }
 
       const data = await res.json();
       const tokens = tokenize(query).filter(
@@ -474,22 +478,31 @@ const adapters: SearchAdapter[] = [
   new CheerioAdapter(),
 ];
 
+let serpapiExhausted = false;
+
+export interface PriceSearchResult {
+  results: PriceResult[];
+  source: "serpapi" | "cheerio" | "fallback";
+}
+
 export async function searchProductPrice(
   productName: string,
   _location?: { lat: number; lng: number } | null,
   brandName?: string,
-): Promise<PriceResult[]> {
+): Promise<PriceSearchResult> {
   const query = `${productName} ${brandName || ""} preço supermercado brasil`.trim();
 
   for (const adapter of adapters) {
     if (!adapter.isAvailable()) continue;
     try {
       const results = await adapter.search(query);
-      if (results.length >= 2) return results;
+      if (results.length >= 2) {
+        return { results, source: adapter.name === "serpapi" ? "serpapi" : "cheerio" };
+      }
     } catch {
       // Fall through — adapter failed silently, try next
     }
   }
 
-  return generateFallbackResults(productName, brandName);
+  return { results: generateFallbackResults(productName, brandName), source: "fallback" };
 }
