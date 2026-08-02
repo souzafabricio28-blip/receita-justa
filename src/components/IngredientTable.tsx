@@ -1,5 +1,8 @@
 "use client";
 
+import { useState } from "react";
+import { PriceHistoryChart } from "@/components/PriceHistoryChart";
+
 interface Brand {
   id: string;
   name: string;
@@ -46,7 +49,8 @@ function PriceBadge({ userPrice, marketPrice }: { userPrice: number; marketPrice
   );
 }
 
-function MarketPrices({ prices, onSelect }: { prices: PriceResult[]; onSelect?: (price: number) => void }) {
+function MarketPrices({ prices, productId, onSelect }: { prices: PriceResult[]; productId: string; onSelect?: (result: PriceResult) => void }) {
+  const [showHistory, setShowHistory] = useState(false);
   if (!prices.length) return null;
   return (
     <details className="text-xs mt-1.5">
@@ -60,7 +64,7 @@ function MarketPrices({ prices, onSelect }: { prices: PriceResult[]; onSelect?: 
             className="flex items-center gap-1.5 text-gray-500 hover:bg-emerald-50 hover:text-emerald-700 rounded px-2 py-1.5 transition-colors"
           >
             <button
-              onClick={() => onSelect?.(p.price)}
+              onClick={() => onSelect?.(p)}
               className="flex-1 flex items-center gap-2 text-left min-w-0"
               title={`Aplicar R$ ${p.price.toFixed(2).replace(".", ",")}`}
             >
@@ -82,6 +86,15 @@ function MarketPrices({ prices, onSelect }: { prices: PriceResult[]; onSelect?: 
             )}
           </div>
         ))}
+        <div className="pt-1 border-t border-gray-200">
+          <button
+            onClick={() => setShowHistory((v) => !v)}
+            className="w-full text-left text-[11px] text-teal-700 hover:text-teal-800 font-medium py-1"
+          >
+            {showHistory ? "Ocultar histórico" : "Ver histórico de preços"}
+          </button>
+          {showHistory && <PriceHistoryChart productId={productId} />}
+        </div>
       </div>
     </details>
   );
@@ -104,7 +117,7 @@ export function IngredientTable({
   loadingPrices: Record<string, boolean>;
   removingId: string | null;
   onSearchPrice: (productId: string, productName: string) => void;
-  onSelectPrice?: (productId: string, price: number, quantity: number) => void;
+  onSelectPrice?: (productId: string, result: PriceResult, quantity: number) => void;
   onRemove: (productId: string) => void;
   kitchenMode?: boolean;
 }) {
@@ -216,7 +229,7 @@ export function IngredientTable({
                     ) : (
                       <span className="text-gray-300">—</span>
                     )}
-                    {prices && <MarketPrices prices={prices} onSelect={(price) => onSelectPrice?.(rp.product.id, price, rp.quantity)} />}
+                    {prices && <MarketPrices prices={prices} productId={rp.product.id} onSelect={(result) => onSelectPrice?.(rp.product.id, result, rp.quantity)} />}
                   </td>
                 )}
                 {!kitchenMode && (

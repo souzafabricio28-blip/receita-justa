@@ -1,4 +1,6 @@
 import type { CheerioAPI } from "cheerio";
+import { packageSizePenalty } from "@/lib/package-price";
+import { refineSearchQuery } from "@/lib/services/ai-refine";
 
 export interface PriceResult {
   title: string;
@@ -220,6 +222,26 @@ function fuzzyScore(a: string, b: string): number {
   return matches / longer.length;
 }
 
+function countWholeTokenMatches(text: string, tokens: string[]): number {
+  let matched = 0;
+  for (const t of tokens) {
+    const re = new RegExp(`(^|[^a-z0-9])${t}([^a-z0-9]|$)`, "i");
+    if (re.test(text)) matched++;
+  }
+  return matched;
+}
+
+function scoreMatch(text: string, tokens: string[]): number {
+  if (tokens.length === 0) return 1;
+  const norm = normalize(text);
+  const whole = countWholeTokenMatches(norm, tokens);
+  if (whole === 0) return 0;
+  let score = whole / tokens.length;
+  const first = tokens[0];
+  if (first && norm.trimStart().startsWith(first)) score += 0.2;
+  return score;
+}
+
 function getFallback(query: string): PriceResult[] {
   const qTokens = removeStopWords(tokenize(query));
   if (qTokens.length === 0) return [];
@@ -296,11 +318,11 @@ class SerpApiAdapter implements SearchAdapter {
         seen.add(key);
 
         const normText = normalize(text);
-        let matched = 0;
-        for (const t of tokens) {
-          if (normText.includes(t)) matched++;
-        }
-        const score = tokens.length > 0 ? matched / tokens.length : 1;
+        const matched = countWholeTokenMatches(normText, tokens);
+        let score = tokens.length > 0 ? matched / tokens.length : 1;
+        if (tokens.length > 0 && matched === 0) continue;
+        score += packageSizePenalty(title);
+        if (score <= 0.25) continue;
         scored.push({
           result: {
             title: title.substring(0, 60) || query,
@@ -526,12 +548,11 @@ class VtexAdapter implements SearchAdapter {
           if (offer?.IsAvailable === false) continue;
 
           const normName = normalize(name);
-          let matched = 0;
-          for (const t of tokens) {
-            if (normName.includes(t)) matched++;
-          }
-          const score = tokens.length > 0 ? matched / tokens.length : 1;
-          if (tokens.length > 0 && matched === 0) continue;
+          const whole = countWholeTokenMatches(normName, tokens);
+          if (tokens.length > 0 && whole === 0) continue;
+          let score = tokens.length > 0 ? whole / tokens.length : 1;
+          score += packageSizePenalty(name);
+          if (tokens.length > 0 && score <= 0.25) continue;
 
           const key = `${name}|${price}`;
           if (seen.has(key)) continue;
@@ -576,9 +597,24 @@ export async function searchProductPrice(
   productName: string,
   _location?: { lat: number; lng: number } | null,
   brandName?: string,
+  opts?: { refine?: boolean },
 ): Promise<PriceSearchResult> {
   const query = `${productName} ${brandName || ""} preço supermercado brasil`.trim();
+  const result = await searchWithAdapters(query);
+  if (result.source !== "fallback") return result;
 
+  if (opts?.refine !== false) {
+    const refined = await refineSearchQuery(productName, brandName);
+    if (refined && refined.toLowerCase() !== query.toLowerCase()) {
+      const refinedResult = await searchWithAdapters(`${refined} preço supermercado brasil`);
+      if (refinedResult.source !== "fallback") return refinedResult;
+    }
+  }
+
+  return { results: generateFallbackResults(productName, brandName), source: "fallback" };
+}
+
+async function searchWithAdapters(query: string): Promise<PriceSearchResult> {
   for (const adapter of adapters) {
     if (!adapter.isAvailable()) continue;
     try {
@@ -594,6 +630,5 @@ export async function searchProductPrice(
       // Fall through — adapter failed silently, try next
     }
   }
-
-  return { results: generateFallbackResults(productName, brandName), source: "fallback" };
+  return { results: [], source: "fallback" };
 }

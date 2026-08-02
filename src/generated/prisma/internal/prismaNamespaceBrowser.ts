@@ -59,7 +59,10 @@ export const ModelName = {
   Product: 'Product',
   Purchase: 'Purchase',
   RecipeProduct: 'RecipeProduct',
-  ProfitCalculation: 'ProfitCalculation'
+  ProfitCalculation: 'ProfitCalculation',
+  PriceCache: 'PriceCache',
+  PriceHistory: 'PriceHistory',
+  NotificationLog: 'NotificationLog'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -199,12 +202,55 @@ export const ProfitCalculationScalarFieldEnum = {
 export type ProfitCalculationScalarFieldEnum = (typeof ProfitCalculationScalarFieldEnum)[keyof typeof ProfitCalculationScalarFieldEnum]
 
 
+export const PriceCacheScalarFieldEnum = {
+  id: 'id',
+  key: 'key',
+  results: 'results',
+  source: 'source',
+  fetchedAt: 'fetchedAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type PriceCacheScalarFieldEnum = (typeof PriceCacheScalarFieldEnum)[keyof typeof PriceCacheScalarFieldEnum]
+
+
+export const PriceHistoryScalarFieldEnum = {
+  id: 'id',
+  productId: 'productId',
+  productName: 'productName',
+  title: 'title',
+  price: 'price',
+  store: 'store',
+  url: 'url',
+  source: 'source',
+  createdAt: 'createdAt'
+} as const
+
+export type PriceHistoryScalarFieldEnum = (typeof PriceHistoryScalarFieldEnum)[keyof typeof PriceHistoryScalarFieldEnum]
+
+
+export const NotificationLogScalarFieldEnum = {
+  id: 'id',
+  type: 'type',
+  sentAt: 'sentAt'
+} as const
+
+export type NotificationLogScalarFieldEnum = (typeof NotificationLogScalarFieldEnum)[keyof typeof NotificationLogScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
 } as const
 
 export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder]
+
+
+export const JsonNullValueInput = {
+  JsonNull: JsonNull
+} as const
+
+export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput]
 
 
 export const QueryMode = {
@@ -221,4 +267,13 @@ export const NullsOrder = {
 } as const
 
 export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
+
+
+export const JsonNullValueFilter = {
+  DbNull: DbNull,
+  JsonNull: JsonNull,
+  AnyNull: AnyNull
+} as const
+
+export type JsonNullValueFilter = (typeof JsonNullValueFilter)[keyof typeof JsonNullValueFilter]
 

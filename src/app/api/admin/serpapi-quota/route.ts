@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { getSerpApiQuota } from "@/lib/serpapi-quota";
+import { maybeNotifyQuota } from "@/lib/services/quota-notify";
 
 export async function GET() {
   const session = await auth();
@@ -12,5 +13,6 @@ export async function GET() {
   }
 
   const quota = await getSerpApiQuota();
+  void maybeNotifyQuota();
   return NextResponse.json({ quota }, { headers: { "Cache-Control": "no-store" } });
 }

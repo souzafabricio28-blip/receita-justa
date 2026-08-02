@@ -62,3 +62,18 @@ export type RecipeProduct = Prisma.RecipeProductModel
  * 
  */
 export type ProfitCalculation = Prisma.ProfitCalculationModel
+/**
+ * Model PriceCache
+ * 
+ */
+export type PriceCache = Prisma.PriceCacheModel
+/**
+ * Model PriceHistory
+ * 
+ */
+export type PriceHistory = Prisma.PriceHistoryModel
+/**
+ * Model NotificationLog
+ * 
+ */
+export type NotificationLog = Prisma.NotificationLogModel

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useToast } from "@/components/ui/toast";
+import { unitPriceFromMarket } from "@/lib/package-price";
 
 interface BrandInfo {
   id: string;
@@ -59,6 +60,8 @@ export function useRecipeProducts(recipeId: string, initialProducts: RecipeProdu
     try {
       const params = new URLSearchParams({ q: productName });
       if (brandName) params.set("brand", brandName);
+      params.set("productId", productId);
+      params.set("refine", "1");
       const res = await fetch(`/api/prices/search?${params}`, { cache: "no-store" });
       const data = await res.json();
       const results = data.results || [];
@@ -70,7 +73,7 @@ export function useRecipeProducts(recipeId: string, initialProducts: RecipeProdu
           toast("Cota de buscas reais esgotada — exibindo preços estimados.", "info");
         } else {
           const best = lowestPrice(results);
-          const ok = await applyPrice(rp.product.id, best.price, rp.quantity);
+          const ok = await applyPrice(rp.product.id, best, rp.quantity);
           if (ok) toast("Menor preço aplicado ao ingrediente!", "success");
         }
       }
@@ -85,8 +88,14 @@ export function useRecipeProducts(recipeId: string, initialProducts: RecipeProdu
     return results.reduce((min, p) => (p.price < min.price ? p : min), results[0]);
   }
 
-  async function applyPrice(productId: string, price: number, quantity: number) {
-    const perUnitPrice = quantity > 0 ? price / quantity : price;
+  async function applyPrice(
+    productId: string,
+    price: { title: string; price: number; store: string; url: string },
+    quantity: number
+  ) {
+    const rp = products.find((p) => p.product.id === productId);
+    const unit = rp?.product.unit || "un";
+    const perUnitPrice = unitPriceFromMarket(price.title, price.price, unit, quantity);
     const res = await fetch(`/api/products/${productId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -108,7 +117,10 @@ export function useRecipeProducts(recipeId: string, initialProducts: RecipeProdu
 
     const results = await Promise.allSettled(
       products.map((rp) =>
-        fetch(`/api/prices/search?q=${encodeURIComponent(rp.product.name)}`, { cache: "no-store" })
+        fetch(
+          `/api/prices/search?q=${encodeURIComponent(rp.product.name)}&productId=${rp.product.id}&refine=1`,
+          { cache: "no-store" }
+        )
           .then((r) => r.json())
           .then((data) => ({ productId: rp.product.id, results: data.results || [], source: data.source as string | undefined }))
       )
@@ -132,7 +144,7 @@ export function useRecipeProducts(recipeId: string, initialProducts: RecipeProdu
       if (list && list.length > 0) {
         if (sources[rp.product.id] === "fallback") continue;
         const best = lowestPrice(list);
-        const ok = await applyPrice(rp.product.id, best.price, rp.quantity);
+        const ok = await applyPrice(rp.product.id, best, rp.quantity);
         if (ok) applied++;
       }
     }

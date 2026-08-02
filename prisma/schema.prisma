@@ -146,3 +146,35 @@ model ProfitCalculation {
   @@index([recipeId])
   @@index([userId, createdAt])
 }
+
+model PriceCache {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  results   Json
+  source    String
+  fetchedAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([key])
+}
+
+model PriceHistory {
+  id          String   @id @default(cuid())
+  productId   String?
+  productName String
+  title       String
+  price       Float
+  store       String?
+  url         String?
+  source      String
+  createdAt   DateTime @default(now())
+
+  @@index([productId, createdAt])
+  @@index([productName, createdAt])
+}
+
+model NotificationLog {
+  id     String   @id @default(cuid())
+  type   String   @unique
+  sentAt DateTime @default(now())
+}

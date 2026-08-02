@@ -124,8 +124,8 @@ export function RecipeDetail({ recipe }: { recipe: RecipeData }) {
     }
   }
 
-  async function selectPrice(productId: string, price: number, quantity: number) {
-    const ok = await applyPrice(productId, price, quantity);
+  async function selectPrice(productId: string, result: { title: string; price: number; store: string; url: string }, quantity: number) {
+    const ok = await applyPrice(productId, result, quantity);
     if (ok) {
       toast("Preço aplicado ao ingrediente!", "success");
     } else {
