@@ -19,7 +19,6 @@ function getPrice(rp: RecipeProductData): number {
 }
 
 function calcTotals(products: RecipeProductData[], scale: number) {
-  const byUnit: Record<string, { total: number; count: number }> = {};
   let custoManual = 0;
   let custoReal = 0;
 
@@ -27,13 +26,9 @@ function calcTotals(products: RecipeProductData[], scale: number) {
     const qty = rp.quantity * scale;
     custoManual += (rp.product.averagePrice ?? 0) * qty;
     custoReal += getPrice(rp) * qty;
-    const unit = rp.product.unit;
-    if (!byUnit[unit]) byUnit[unit] = { total: 0, count: 0 };
-    byUnit[unit].total += qty;
-    byUnit[unit].count++;
   }
 
-  return { custoManual, custoReal, byUnit };
+  return { custoManual, custoReal };
 }
 
 export function CostSummary({
@@ -47,7 +42,7 @@ export function CostSummary({
   portions: number;
   hasRealPrices: boolean;
 }) {
-  const { custoManual, custoReal, byUnit } = calcTotals(products, scale);
+  const { custoManual, custoReal } = calcTotals(products, scale);
   const costPerPortionReal = custoReal / portions;
 
   return (
@@ -91,20 +86,6 @@ export function CostSummary({
           </span>
         </div>
       )}
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-        {Object.entries(byUnit).map(([unit, { total }]) => {
-          const icons: Record<string, string> = { kg: "⚖️", g: "⚖️", L: "🧴", ml: "🧴", un: "📦" };
-          const label: Record<string, string> = { kg: "Peso total", g: "Peso total", L: "Volume total", ml: "Volume total", un: "Unidades" };
-          return (
-            <div key={unit} className="bg-gradient-to-br from-emerald-50 to-emerald-100/50 rounded-xl p-4 text-center shadow-sm hover:shadow-md transition-shadow">
-              <span className="text-lg">{icons[unit] || "📏"}</span>
-              <p className="text-lg font-bold text-emerald-700 mt-1">{total.toFixed(2).replace(".", ",")} {unit}</p>
-              <p className="text-emerald-600 text-xs">{label[unit] || unit}</p>
-            </div>
-          );
-        })}
-      </div>
     </>
   );
 }
