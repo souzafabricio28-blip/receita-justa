@@ -59,7 +59,7 @@ export function useRecipeProducts(recipeId: string, initialProducts: RecipeProdu
     try {
       const params = new URLSearchParams({ q: productName });
       if (brandName) params.set("brand", brandName);
-      const res = await fetch(`/api/prices/search?${params}`);
+      const res = await fetch(`/api/prices/search?${params}`, { cache: "no-store" });
       const data = await res.json();
       const results = data.results || [];
       setPricesMap((prev) => ({ ...prev, [productId]: results }));
@@ -103,7 +103,7 @@ export function useRecipeProducts(recipeId: string, initialProducts: RecipeProdu
 
     const results = await Promise.allSettled(
       products.map((rp) =>
-        fetch(`/api/prices/search?q=${encodeURIComponent(rp.product.name)}`)
+        fetch(`/api/prices/search?q=${encodeURIComponent(rp.product.name)}`, { cache: "no-store" })
           .then((r) => r.json())
           .then((data) => ({ productId: rp.product.id, results: data.results || [] }))
       )

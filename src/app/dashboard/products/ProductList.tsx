@@ -394,7 +394,7 @@ export function ProductList({ products: initialProducts, total, page: initialPag
 
     const results = await Promise.allSettled(
       toSearch.map((p) =>
-        fetch(`/api/prices/search?q=${encodeURIComponent(p.name)}`).then((r) => r.json())
+        fetch(`/api/prices/search?q=${encodeURIComponent(p.name)}`, { cache: "no-store" }).then((r) => r.json())
       )
     );
 

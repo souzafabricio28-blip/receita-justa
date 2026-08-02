@@ -180,7 +180,7 @@ function ImportForm() {
 
     const results = await Promise.allSettled(
       toSearch.map((ing) =>
-        fetch(`/api/prices/search?q=${encodeURIComponent(ing.name)}`).then((r) => r.json())
+        fetch(`/api/prices/search?q=${encodeURIComponent(ing.name)}`, { cache: "no-store" }).then((r) => r.json())
       )
     );
 

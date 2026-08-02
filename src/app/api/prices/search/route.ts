@@ -24,7 +24,7 @@ export async function GET(request: Request) {
   return NextResponse.json(
     { results },
     {
-      headers: { "Cache-Control": "public, max-age=300, stale-while-revalidate=600" },
+      headers: { "Cache-Control": "no-store" },
     }
   );
 }
