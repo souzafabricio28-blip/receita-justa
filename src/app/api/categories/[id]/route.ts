@@ -9,7 +9,7 @@ export const PUT = withErrorHandler(async (request: Request, { params }: { param
 
   const { id } = await params;
   const { name, slug } = await request.json();
-  const category = await categoryService.update(id, name, slug);
+  const category = await categoryService.update(id, session.user.id, name, slug);
   return NextResponse.json(category);
 });
 
@@ -18,6 +18,6 @@ export const DELETE = withErrorHandler(async (_request: Request, { params }: { p
   if (!session?.user?.id) throw new UnauthorizedError();
 
   const { id } = await params;
-  await categoryService.delete(id);
+  await categoryService.delete(id, session.user.id);
   return NextResponse.json({ success: true });
 });

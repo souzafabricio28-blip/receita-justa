@@ -39,19 +39,39 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger }) {
       if (user) {
         token.id = user.id;
-        token.plan = (user as any).plan;
-        token.hasSubscription = (user as any).hasSubscription;
+        token.plan = (user as { plan?: string }).plan;
+        token.hasSubscription = (user as { hasSubscription?: boolean }).hasSubscription;
+        token.planCheckedAt = Date.now();
       }
+
+      const userId = token.id as string | undefined;
+      if (userId) {
+        const last = (token.planCheckedAt as number) || 0;
+        const shouldRefresh = trigger === "update" || Date.now() - last > 30_000;
+        if (shouldRefresh) {
+          const current = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { plan: true, subscription: { select: { status: true } } },
+          });
+          if (current) {
+            token.plan = current.plan;
+            token.hasSubscription = current.subscription?.status === "active";
+            token.planCheckedAt = Date.now();
+          }
+        }
+      }
+
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id as string;
-        (session.user as any).plan = token.plan as string;
-        (session.user as any).hasSubscription = token.hasSubscription as boolean;
+        (session.user as { plan?: string }).plan = token.plan as string;
+        (session.user as { hasSubscription?: boolean }).hasSubscription =
+          token.hasSubscription as boolean;
       }
       return session;
     },

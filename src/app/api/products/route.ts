@@ -13,10 +13,10 @@ export const GET = withErrorHandler(async (request: Request) => {
   const { searchParams } = new URL(request.url);
   const q = searchParams.get("q");
   const page = Math.max(1, Number(searchParams.get("page")) || 1);
-  const products = await productService.search(q || undefined, page);
+  const products = await productService.search(session.user.id, q || undefined, page);
 
   return NextResponse.json(products, {
-    headers: { "Cache-Control": "private, max-age=60, stale-while-revalidate=300" },
+    headers: { "Cache-Control": "private, no-store" },
   });
 });
 
@@ -27,7 +27,12 @@ export const POST = withErrorHandler(async (request: Request) => {
   }
 
   const { name, unit, brandId } = await request.json();
-  const product = await productService.create({ name, unit, brandId });
+  const product = await productService.create({
+    name,
+    unit,
+    brandId,
+    userId: session.user.id,
+  });
   return NextResponse.json(product, { status: 201 });
 });
 
@@ -45,6 +50,6 @@ export const DELETE = withErrorHandler(async (request: Request) => {
     return NextResponse.json({ error: "Parâmetro inválido" }, { status: 400 });
   }
 
-  await productService.deleteAll();
+  await productService.deleteAll(session.user.id);
   return NextResponse.json({ success: true });
 });

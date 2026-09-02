@@ -11,7 +11,9 @@ export default async function DashboardPage() {
     where: { createdById: user?.id },
   });
 
-  const productCount = await prisma.product.count();
+  const productCount = await prisma.product.count({
+    where: { userId: user?.id },
+  });
 
   const calcCount = await prisma.profitCalculation.count({
     where: { userId: user?.id },

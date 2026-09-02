@@ -1,7 +1,7 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-import { useState, Suspense } from "react";
+import { useState, Suspense, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { PLANS } from "@/lib/plans";
@@ -16,7 +16,13 @@ function SubscriptionContent() {
   const upgraded = searchParams.get("upgraded");
   const [loading, setLoading] = useState<PlanId | null>(null);
 
-  const currentPlan = (session?.user as any)?.plan || "basico";
+  const currentPlan = (session?.user as { plan?: string })?.plan || "basico";
+
+  useEffect(() => {
+    if (success || upgraded) {
+      update();
+    }
+  }, [success, upgraded, update]);
 
   async function handleUpgrade(plan: PlanId) {
     setLoading(plan);

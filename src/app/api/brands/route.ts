@@ -8,6 +8,7 @@ export const GET = withErrorHandler(async () => {
   if (!session?.user?.id) throw new UnauthorizedError();
 
   const brands = await prisma.brand.findMany({
+    where: { userId: session.user.id },
     orderBy: { name: "asc" },
   });
   return NextResponse.json(brands);
@@ -21,7 +22,7 @@ export const POST = withErrorHandler(async (request: Request) => {
   if (!name?.trim()) throw new ValidationError("Nome da marca é obrigatório");
 
   const brand = await prisma.brand.create({
-    data: { name: name.trim() },
+    data: { userId: session.user.id, name: name.trim() },
   });
   return NextResponse.json(brand, { status: 201 });
 });

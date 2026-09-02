@@ -1,27 +1,24 @@
 import { prisma } from "@/lib/db";
 import { logger } from "@/lib/logger";
-import { ValidationError } from "@/lib/errors";
+import { NotFoundError, ValidationError } from "@/lib/errors";
 
 export interface CreateProductInput {
   name: string;
   unit?: string;
   brandId?: string;
-}
-
-export interface BrandOption {
-  id: string;
-  name: string;
+  userId: string;
 }
 
 const PAGE_SIZE = 20;
 
 export const productService = {
-  async search(query?: string, page = 1) {
-    const where = query
-      ? { name: { contains: query, mode: "insensitive" as const } }
-      : {};
+  async search(userId: string, query?: string, page = 1) {
+    const where = {
+      userId,
+      ...(query ? { name: { contains: query, mode: "insensitive" as const } } : {}),
+    };
 
-    logger.debug("Searching products", { query, page });
+    logger.debug("Searching products", { userId, query, page });
     return prisma.product.findMany({
       where,
       include: { brand: true, purchases: { orderBy: { date: "desc" } } },
@@ -31,13 +28,27 @@ export const productService = {
     });
   },
 
+  async getOwned(id: string, userId: string) {
+    const product = await prisma.product.findFirst({ where: { id, userId } });
+    if (!product) throw new NotFoundError("Produto não encontrado");
+    return product;
+  },
+
   async create(input: CreateProductInput) {
     if (!input.name?.trim()) throw new ValidationError("Nome é obrigatório");
     if (input.name.length > 200) throw new ValidationError("Nome muito longo (máximo 200 caracteres)");
 
-    logger.info("Creating product", { name: input.name, brandId: input.brandId });
+    if (input.brandId) {
+      const brand = await prisma.brand.findFirst({
+        where: { id: input.brandId, userId: input.userId },
+      });
+      if (!brand) throw new ValidationError("Marca não encontrada");
+    }
+
+    logger.info("Creating product", { name: input.name, userId: input.userId, brandId: input.brandId });
     return prisma.product.create({
       data: {
+        userId: input.userId,
         name: input.name.trim(),
         unit: input.unit || "un",
         brandId: input.brandId?.trim() || null,
@@ -46,8 +57,21 @@ export const productService = {
     });
   },
 
-  async update(id: string, input: Partial<CreateProductInput & { averagePrice?: number; currentStock?: number }>) {
-    logger.debug("Updating product", { productId: id, ...input });
+  async update(
+    id: string,
+    userId: string,
+    input: Partial<Omit<CreateProductInput, "userId"> & { averagePrice?: number; currentStock?: number }>
+  ) {
+    await this.getOwned(id, userId);
+
+    if (input.brandId) {
+      const brand = await prisma.brand.findFirst({
+        where: { id: input.brandId, userId },
+      });
+      if (!brand) throw new ValidationError("Marca não encontrada");
+    }
+
+    logger.debug("Updating product", { productId: id, userId, ...input });
     const data: Record<string, unknown> = {};
     if (input.name !== undefined) data.name = input.name;
     if (input.unit !== undefined) data.unit = input.unit;
@@ -60,54 +84,55 @@ export const productService = {
     });
   },
 
-  async delete(id: string) {
-    logger.info("Deleting product", { productId: id });
+  async delete(id: string, userId: string) {
+    await this.getOwned(id, userId);
+    logger.info("Deleting product", { productId: id, userId });
+    await prisma.recipeProduct.deleteMany({ where: { productId: id } });
     await prisma.product.delete({ where: { id } });
   },
 
-  async deleteAll() {
-    logger.warn("Deleting ALL products");
+  async deleteAll(userId: string) {
+    logger.warn("Deleting all products for user", { userId });
+    const products = await prisma.product.findMany({
+      where: { userId },
+      select: { id: true },
+    });
+    const ids = products.map((p) => p.id);
     await prisma.$transaction([
-      prisma.purchase.deleteMany(),
-      prisma.recipeProduct.deleteMany(),
-      prisma.product.deleteMany(),
+      prisma.recipeProduct.deleteMany({ where: { productId: { in: ids } } }),
+      prisma.purchase.deleteMany({ where: { userId } }),
+      prisma.product.deleteMany({ where: { userId } }),
     ]);
   },
 
   async recordPurchase(
+    userId: string,
     productId: string,
     quantity: number,
     totalPrice: number,
     store?: string,
     notes?: string
   ) {
+    await this.getOwned(productId, userId);
     if (quantity <= 0) throw new ValidationError("Quantidade deve ser maior que zero");
     if (totalPrice < 0) throw new ValidationError("Preço total não pode ser negativo");
 
-    logger.info("Recording purchase", { productId, quantity, totalPrice, store });
+    logger.info("Recording purchase", { userId, productId, quantity, totalPrice, store });
     return prisma.purchase.create({
-      data: { productId, quantity, totalPrice, store, notes },
+      data: { userId, productId, quantity, totalPrice, store, notes },
     });
   },
 
-  async listBrands() {
+  async listBrands(userId: string) {
     return prisma.brand.findMany({
+      where: { userId },
       orderBy: { name: "asc" },
     });
   },
 
-  async adjustStock(productId: string, quantity: number) {
-    logger.info("Adjusting stock", { productId, quantity });
-    return prisma.product.update({
-      where: { id: productId },
-      data: { currentStock: { increment: quantity } },
-    });
-  },
-
-  async listPurchases(productId?: string) {
-    const where = productId ? { productId } : {};
+  async listPurchases(userId: string, productId?: string) {
     return prisma.purchase.findMany({
-      where,
+      where: { userId, ...(productId ? { productId } : {}) },
       include: { product: true },
       orderBy: { date: "desc" },
       take: 100,

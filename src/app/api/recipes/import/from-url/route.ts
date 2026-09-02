@@ -18,6 +18,6 @@ export const POST = withErrorHandler(async (request: Request) => {
     return NextResponse.json({ error: "URL obrigatória" }, { status: 400 });
   }
 
-  const result = await importService.parseFromUrl(url);
+  const result = await importService.parseFromUrl(url, session.user.id);
   return NextResponse.json(result);
 });

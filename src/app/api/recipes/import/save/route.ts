@@ -42,7 +42,10 @@ export const POST = withErrorHandler(async (request: Request) => {
 
       if (!productId && productName) {
         const existing = await prisma.product.findFirst({
-          where: { name: { contains: productName, mode: "insensitive" } },
+          where: {
+            userId: session.user.id,
+            name: { contains: productName, mode: "insensitive" },
+          },
         });
         productId = existing?.id;
       }
@@ -50,6 +53,7 @@ export const POST = withErrorHandler(async (request: Request) => {
       if (!productId && productName) {
         const created = await prisma.product.create({
           data: {
+            userId: session.user.id,
             name: productName.trim(),
             unit: ing.unit || "un",
             averagePrice: 0,
@@ -59,6 +63,12 @@ export const POST = withErrorHandler(async (request: Request) => {
       }
 
       if (!productId) continue;
+
+      const owned = await prisma.product.findFirst({
+        where: { id: productId, userId: session.user.id },
+        select: { id: true },
+      });
+      if (!owned) continue;
 
       if (ing.averagePrice && ing.averagePrice > 0) {
         const effectiveUnit = ing.unit || "un";

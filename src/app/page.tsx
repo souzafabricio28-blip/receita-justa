@@ -1,73 +1,108 @@
 import Link from "next/link";
+import { PLANS } from "@/lib/plans";
 
 export default function Home() {
+  const premium = PLANS.premium;
+
   return (
-    <div className="flex flex-col min-h-screen">
-      <header className="border-b">
+    <div className="flex flex-col min-h-screen bg-neutral-950 text-neutral-100">
+      <header className="border-b border-white/10">
         <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-emerald-700">Receita Justa</h1>
-          <nav className="flex gap-4">
-            <Link href="/login" className="text-gray-600 hover:text-emerald-700 font-medium">
+          <h1 className="text-xl font-bold text-white">Receita Justa</h1>
+          <nav className="flex gap-3">
+            <Link href="/login" className="text-neutral-300 hover:text-white font-medium px-3 py-2">
               Entrar
             </Link>
             <Link
               href="/register"
-              className="bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 font-medium"
+              className="bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-500 font-medium"
             >
-              Cadastrar
+              Criar conta grátis
             </Link>
           </nav>
         </div>
       </header>
 
-      <main className="flex-1 flex flex-col items-center justify-center px-4 py-16 text-center">
-        <h2 className="text-4xl font-bold text-gray-900 mb-4 max-w-2xl">
-          Transforme suas receitas em <span style={{ color: "#6B9B6B", fontWeight: 700 }}>lucro real</span>
-        </h2>
-        <p className="text-lg text-gray-600 mb-8 max-w-xl">
-          Calcule custos, defina preços e maximize sua margem de lucro com nossa plataforma inteligente.
-        </p>
-        <div className="flex gap-4">
-          <Link
-            href="/register"
-            className="bg-emerald-600 text-white px-8 py-3 rounded-lg text-lg font-medium hover:bg-emerald-700"
-          >
-            Começar
-          </Link>
-          <Link
-            href="/login"
-            className="border border-gray-300 text-gray-700 px-8 py-3 rounded-lg text-lg font-medium hover:bg-gray-50"
-          >
-            Já tenho conta
-          </Link>
-        </div>
+      <main className="flex-1">
+        <section className="max-w-6xl mx-auto px-4 py-16 text-center">
+          <p className="text-emerald-400 text-sm font-medium mb-3">Para confeitaria, marmita e doceria</p>
+          <h2 className="text-4xl md:text-5xl font-bold text-white mb-4 max-w-3xl mx-auto">
+            Saiba o custo real da receita antes de definir o preço
+          </h2>
+          <p className="text-lg text-neutral-400 mb-8 max-w-2xl mx-auto">
+            Cadastre ingredientes, importe uma receita e veja custo por pote, fatia ou cento — em reais, com a conta da sua cozinha.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Link
+              href="/register"
+              className="bg-emerald-600 text-white px-8 py-3 rounded-lg text-lg font-medium hover:bg-emerald-500"
+            >
+              Começar grátis
+            </Link>
+            <Link
+              href="/login"
+              className="border border-white/20 text-neutral-200 px-8 py-3 rounded-lg text-lg font-medium hover:bg-white/5"
+            >
+              Já tenho conta
+            </Link>
+          </div>
+        </section>
 
-        <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl w-full">
-          <div className="p-6 border rounded-xl text-left">
-            <div className="text-3xl mb-3">📊</div>
-            <h3 className="font-semibold text-lg mb-2">Calcule Custos</h3>
-            <p className="text-gray-600 text-sm">
-              Adicione ingredientes e produtos com preços atualizados para saber o custo real de cada receita.
+        <section className="max-w-3xl mx-auto px-4 pb-16">
+          <div className="rounded-2xl border border-white/10 bg-neutral-900 p-6 md:p-8 text-left">
+            <p className="text-sm text-neutral-400 mb-2">Exemplo: bolo de pote</p>
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <p className="text-xs text-neutral-500">Custo</p>
+                <p className="text-2xl font-bold text-white">R$ 4,12</p>
+              </div>
+              <div>
+                <p className="text-xs text-neutral-500">Venda</p>
+                <p className="text-2xl font-bold text-white">R$ 12,00</p>
+              </div>
+              <div>
+                <p className="text-xs text-neutral-500">Margem</p>
+                <p className="text-2xl font-bold text-emerald-400">66%</p>
+              </div>
+            </div>
+            <p className="text-sm text-neutral-500 mt-4">
+              Sem chute: o sistema soma farinha, leite, embalagem e chega no preço mínimo para não vender no prejuízo.
             </p>
           </div>
-          <div className="p-6 border rounded-xl text-left">
-            <div className="text-3xl mb-3">💰</div>
-            <h3 className="font-semibold text-lg mb-2">Defina Margens</h3>
-            <p className="text-gray-600 text-sm">
-              Descubra o preço ideal de venda e sua margem de lucro por receita.
-            </p>
+        </section>
+
+        <section className="max-w-5xl mx-auto px-4 pb-20 grid md:grid-cols-2 gap-6">
+          <div className="rounded-2xl border border-white/10 p-6">
+            <p className="text-sm text-neutral-400 mb-1">Básico</p>
+            <p className="text-3xl font-bold mb-4">Grátis</p>
+            <ul className="space-y-2 text-sm text-neutral-300 mb-6">
+              {PLANS.basico.features.map((f) => (
+                <li key={f}>{f}</li>
+              ))}
+            </ul>
+            <Link href="/register" className="inline-block text-emerald-400 font-medium hover:underline">
+              Criar conta
+            </Link>
           </div>
-          <div className="p-6 border rounded-xl text-left">
-            <div className="text-3xl mb-3">📈</div>
-            <h3 className="font-semibold text-lg mb-2">Acompanhe Resultados</h3>
-            <p className="text-gray-600 text-sm">
-              Visualize relatórios e tome decisões para aumentar sua lucratividade.
+          <div className="rounded-2xl border border-emerald-500/50 p-6">
+            <p className="text-sm text-emerald-400 mb-1">Premium</p>
+            <p className="text-3xl font-bold mb-4">
+              R$ {premium.price.toFixed(2).replace(".", ",")}
+              <span className="text-base font-normal text-neutral-400"> /mês</span>
             </p>
+            <ul className="space-y-2 text-sm text-neutral-300 mb-6">
+              {premium.features.map((f) => (
+                <li key={f}>{f}</li>
+              ))}
+            </ul>
+            <Link href="/register" className="inline-block bg-emerald-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-emerald-500">
+              Começar e assinar depois
+            </Link>
           </div>
-        </div>
+        </section>
       </main>
 
-      <footer className="border-t py-6 text-center text-sm text-gray-500">
+      <footer className="border-t border-white/10 py-6 text-center text-sm text-neutral-500">
         © 2026 Receita Justa. Todos os direitos reservados.
       </footer>
     </div>

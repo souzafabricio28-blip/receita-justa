@@ -52,7 +52,7 @@ ${recipeLines || "Nenhuma receita cadastrada ainda."}
 - Pesquisa de preços de mercado na internet
 - Comparação entre preço cadastrado e preço de mercado
 - Cálculo de lucro com margem e preço sugerido
-- Planos: Básico (R$29,90/mês) e Premium (R$49,90/mês)
+- Planos: Básico (grátis) e Premium (R$ 49,90/mês)
 
 ## Orientações:
 1. Responda SEMPRE em português brasileiro, de forma clara e amigável

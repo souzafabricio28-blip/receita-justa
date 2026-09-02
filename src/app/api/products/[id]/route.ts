@@ -16,7 +16,7 @@ export const PATCH = withErrorHandler(async (request: Request, { params }: { par
     allowedFields.filter((f) => f in body).map((f) => [f, body[f]])
   );
 
-  const product = await productService.update(id, data);
+  const product = await productService.update(id, session.user.id, data);
   return NextResponse.json(product);
 });
 
@@ -27,6 +27,6 @@ export const DELETE = withErrorHandler(async (_request: Request, { params }: { p
   }
 
   const { id } = await params;
-  await productService.delete(id);
+  await productService.delete(id, session.user.id);
   return NextResponse.json({ success: true });
 });

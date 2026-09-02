@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Receita Justa",
-  description: "Gerencie suas receitas e calcule lucros",
+  description: "Calcule o custo real das suas receitas e defina o preço de venda sem prejuízo.",
 };
 
 export default function RootLayout({

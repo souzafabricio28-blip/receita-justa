@@ -39,7 +39,7 @@ export default async function RecipesPage(props: { searchParams?: Promise<{ page
                 : "Cadastre sua primeira receita para começar a calcular os custos."}
             </p>
           </div>
-          <div className="hidden md:flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2 mt-4 md:mt-0">
             <Link
               href="/dashboard/recipes/new"
               className="bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white px-4 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center gap-2"
@@ -130,7 +130,11 @@ export default async function RecipesPage(props: { searchParams?: Promise<{ page
                           </svg>
                           R$ {totalCost.toFixed(2)}
                         </div>
-                        <span className="text-xs text-gray-400 mt-0.5">custo total</span>
+                        <span className="text-xs text-gray-400 mt-0.5">
+                          {recipe.yield && recipe.yield > 0
+                            ? `R$ ${(totalCost / recipe.yield).toFixed(2)} / un`
+                            : "custo total"}
+                        </span>
                       </div>
                     </div>
 

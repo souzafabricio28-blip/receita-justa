@@ -9,8 +9,10 @@ const MP_WEBHOOK_SECRET = process.env.MERCADO_PAGO_WEBHOOK_SECRET;
 
 export const subscriptionService = {
   async createCheckout(userId: string, plan: string) {
-    if (plan !== "basico" && plan !== "premium") throw new ValidationError("Plano inválido");
-    const planConfig = PLANS[plan as keyof typeof PLANS];
+    if (plan !== "premium") {
+      throw new ValidationError("Apenas o plano Premium pode ser assinado. O Básico é gratuito.");
+    }
+    const planConfig = PLANS.premium;
 
     logger.info("Creating subscription checkout", { userId, plan });
 
@@ -21,9 +23,9 @@ export const subscriptionService = {
 
     const preference = {
       items: [{
-        id: plan,
+        id: "premium",
         title: `Receita Justa - Plano ${planConfig.label}`,
-        description: `Plano ${planConfig.label} - Acesso a todos os recursos`,
+        description: `Plano ${planConfig.label}`,
         quantity: 1,
         currency_id: "BRL",
         unit_price: planConfig.price,
@@ -35,7 +37,7 @@ export const subscriptionService = {
       },
       auto_return: "approved",
       notification_url: `${process.env.NEXTAUTH_URL}/api/subscription/webhook`,
-      metadata: { userId, plan },
+      metadata: { userId, plan: "premium" },
     };
 
     const mpRes = await fetch("https://api.mercadopago.com/checkout/preferences", {
@@ -95,35 +97,51 @@ export const subscriptionService = {
       }
 
       const payment = await mpRes.json();
-      const userId = payment.metadata?.userId;
-      const plan = payment.metadata?.plan || "premium";
+      const userId = payment.metadata?.userId as string | undefined;
+      const paidPlan = payment.metadata?.plan === "premium" ? "premium" : "premium";
       const isApproved = payment.status === "approved";
+      const eventId = `mp:${payment.id}`;
 
       if (userId && isApproved) {
-        logger.info("Activating subscription from webhook", { userId, plan, paymentId: payment.id });
+        const already = await prisma.webhookEvent.findUnique({ where: { id: eventId } });
+        if (already) {
+          return { success: true, status: 200 };
+        }
 
-        await prisma.subscription.upsert({
-          where: { userId },
-          update: {
-            status: "active",
-            plan,
-            mpPaymentId: String(payment.id),
-            mpStatus: payment.status,
-            startDate: new Date(),
-          },
-          create: {
-            userId,
-            plan,
-            status: "active",
-            mpPaymentId: String(payment.id),
-            mpStatus: payment.status,
-          },
-        });
+        logger.info("Activating subscription from webhook", { userId, plan: paidPlan, paymentId: payment.id });
 
-        await prisma.user.update({
-          where: { id: userId },
-          data: { plan: "premium" },
-        });
+        try {
+          await prisma.$transaction([
+            prisma.webhookEvent.create({ data: { id: eventId } }),
+            prisma.subscription.upsert({
+              where: { userId },
+              update: {
+                status: "active",
+                plan: paidPlan,
+                mpPaymentId: String(payment.id),
+                mpStatus: payment.status,
+                startDate: new Date(),
+              },
+              create: {
+                userId,
+                plan: paidPlan,
+                status: "active",
+                mpPaymentId: String(payment.id),
+                mpStatus: payment.status,
+              },
+            }),
+            prisma.user.update({
+              where: { id: userId },
+              data: { plan: paidPlan },
+            }),
+          ]);
+        } catch (error) {
+          const code = typeof error === "object" && error && "code" in error ? (error as { code?: string }).code : "";
+          if (code === "P2002") {
+            return { success: true, status: 200 };
+          }
+          throw error;
+        }
       }
     }
 

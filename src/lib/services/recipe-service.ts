@@ -66,6 +66,13 @@ export const recipeService = {
   async update(id: string, userId: string, input: UpdateRecipeInput) {
     await this.getById(id, userId);
 
+    if (input.categoryId) {
+      const category = await prisma.category.findFirst({
+        where: { id: input.categoryId, userId },
+      });
+      if (!category) throw new NotFoundError("Categoria não encontrada");
+    }
+
     const data = Object.fromEntries(
       ALLOWED_UPDATE_FIELDS
         .filter((f) => f in input)
@@ -90,6 +97,8 @@ export const recipeService = {
 
   async addProduct(recipeId: string, userId: string, productId: string, quantity: number) {
     await this.getById(recipeId, userId);
+    const product = await prisma.product.findFirst({ where: { id: productId, userId } });
+    if (!product) throw new NotFoundError("Produto não encontrado");
 
     logger.debug("Adding product to recipe", { recipeId, productId, quantity });
     return prisma.recipeProduct.upsert({

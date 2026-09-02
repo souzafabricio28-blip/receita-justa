@@ -34,7 +34,7 @@ export const POST = withErrorHandler(async (request: Request, { params }: { para
       const needed = rp.quantity * scale;
 
       const result = await tx.product.updateMany({
-        where: { id: rp.product.id, currentStock: { gte: needed } },
+        where: { id: rp.product.id, userId: session.user.id, currentStock: { gte: needed } },
         data: { currentStock: { decrement: needed } },
       });
 

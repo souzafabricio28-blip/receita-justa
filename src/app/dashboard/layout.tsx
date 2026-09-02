@@ -22,7 +22,7 @@ export default async function DashboardLayout({
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
       <Sidebar />
-      <main className="flex-1 p-8 overflow-auto">
+      <main className="flex-1 p-4 pt-16 md:p-8 md:pt-8 overflow-auto">
         <div className="max-w-6xl mx-auto">
           {isAdmin && <SerpApiQuotaBanner />}
           {children}

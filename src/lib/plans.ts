@@ -23,13 +23,11 @@ export interface PlanConfig {
 export const PLANS: Record<PlanId, PlanConfig> = {
   basico: {
     label: "Básico",
-    price: 29.90,
+    price: 0,
     features: [
-      "Receitas ilimitadas",
-      "Produtos ilimitados",
-      "Adicionar ingredientes",
-      "Ajustar rendimento",
-      "Custo automático",
+      "Receitas e produtos ilimitados",
+      "Custo automático da receita",
+      "Custo por porção",
       "Dashboard",
       "Baixar PDF",
     ],
@@ -40,14 +38,14 @@ export const PLANS: Record<PlanId, PlanConfig> = {
       searchPrices: false,
       calcProfit: false,
       purchases: false,
-      assistant: true,
+      assistant: false,
       deleteAllProducts: false,
       exportPdf: true,
     },
   },
   premium: {
     label: "Premium",
-    price: 49.90,
+    price: 49.9,
     features: [
       "Tudo do Básico",
       "Importar receita por texto (IA)",
@@ -56,7 +54,7 @@ export const PLANS: Record<PlanId, PlanConfig> = {
       "Calcular lucro (margem + preço)",
       "Preço de compra real",
       "Assistente IA",
-      "Comparação preço de mercado",
+      "Comparação de preço de mercado",
     ],
     limits: { maxRecipes: 999, maxProducts: 999 },
     allowed: {

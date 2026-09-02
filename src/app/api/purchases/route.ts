@@ -14,7 +14,14 @@ export const POST = withErrorHandler(async (request: Request) => {
   if (planError) return planError;
 
   const { productId, quantity, totalPrice, store, notes } = await request.json();
-  const purchase = await productService.recordPurchase(productId, quantity, totalPrice, store, notes);
+  const purchase = await productService.recordPurchase(
+    session.user.id,
+    productId,
+    quantity,
+    totalPrice,
+    store,
+    notes
+  );
   return NextResponse.json(purchase, { status: 201 });
 });
 
@@ -26,6 +33,6 @@ export const GET = withErrorHandler(async (request: Request) => {
 
   const { searchParams } = new URL(request.url);
   const productId = searchParams.get("productId");
-  const purchases = await productService.listPurchases(productId || undefined);
+  const purchases = await productService.listPurchases(session.user.id, productId || undefined);
   return NextResponse.json(purchases);
 });

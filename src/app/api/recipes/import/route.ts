@@ -21,6 +21,6 @@ export const POST = withErrorHandler(async (request: Request) => {
     return NextResponse.json({ error: "Texto obrigatório" }, { status: 400 });
   }
 
-  const result = await importService.parseText(text, forceFallback);
+  const result = await importService.parseText(text, session.user.id, forceFallback);
   return NextResponse.json(result);
 });

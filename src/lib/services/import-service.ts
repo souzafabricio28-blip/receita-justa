@@ -70,18 +70,19 @@ function enrichIngredients(
 }
 
 export const importService = {
-  async getProducts() {
+  async getProducts(userId: string) {
     const products = await prisma.product.findMany({
+      where: { userId },
       select: { id: true, name: true, unit: true, averagePrice: true },
       orderBy: { name: "asc" },
     });
     return products.map((p) => ({ ...p, averagePrice: p.averagePrice ?? 0 }));
   },
 
-  async parseText(text: string, forceFallback = false): Promise<ImportResult> {
+  async parseText(text: string, userId: string, forceFallback = false): Promise<ImportResult> {
     if (!text?.trim()) throw new ValidationError("Texto obrigatório");
 
-    const products = await this.getProducts();
+    const products = await this.getProducts(userId);
     const productList = products
       .map((p) => `- ${p.name} (${p.unit}, R$ ${(p.averagePrice ?? 0).toFixed(2).replace(".", ",")})`)
       .join("\n");
@@ -103,7 +104,7 @@ export const importService = {
     };
   },
 
-  async parseFromUrl(url: string): Promise<ImportResult> {
+  async parseFromUrl(url: string, userId: string): Promise<ImportResult> {
     if (!url?.trim()) throw new ValidationError("URL obrigatória");
 
     await assertPublicUrl(url);
@@ -161,7 +162,7 @@ export const importService = {
     }
 
     const combinedText = [title, description, instructions].filter(Boolean).join("\n\n");
-    return this.parseText(combinedText, true);
+    return this.parseText(combinedText, userId, true);
   },
 
 };
